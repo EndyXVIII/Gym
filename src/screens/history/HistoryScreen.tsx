@@ -134,7 +134,7 @@ function DayTable({ data, currentWeek, onCell }: { data: GridDay; currentWeek: n
                     )}
                   >
                     Sett. {i + 1}
-                    {i === 6 && <span className="block text-[10px] font-medium text-warning">Scarico</span>}
+                    {i === 6 && <span className="block text-[10px] font-medium text-warning-ink">Scarico</span>}
                   </th>
                 ))}
               </tr>
@@ -213,7 +213,7 @@ function SessionsView() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[16px] font-semibold">
                   {day?.title ?? 'Giorno eliminato'}
-                  {!session.finishedAt && <span className="ml-2 text-[12px] font-bold text-warning uppercase">in corso</span>}
+                  {!session.finishedAt && <span className="ml-2 text-[12px] font-bold text-warning-ink uppercase">in corso</span>}
                 </span>
                 <span className="block truncate text-[13px] text-muted tnum">
                   {capitalize(`settimana ${session.week}`)} · {sets} serie{volume > 0 ? ` · ${formatVolume(volume)} kg` : ''}

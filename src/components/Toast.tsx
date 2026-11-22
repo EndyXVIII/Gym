@@ -55,11 +55,11 @@ export function ToastHost({ bottom = 88 }: { bottom?: number }) {
           t.tone === 'error' ? 'border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-raised' : 'border-line bg-raised',
         )}
       >
-        <p className={cx('min-w-0 flex-1 text-[15px]', t.tone === 'error' ? 'text-danger' : 'text-ink')}>{t.text}</p>
+        <p className={cx('min-w-0 flex-1 text-[15px]', t.tone === 'error' ? 'text-danger-ink' : 'text-ink')}>{t.text}</p>
         {t.actionLabel && t.onAction && (
           <button
             type="button"
-            className="pressable -mr-2 min-h-11 shrink-0 rounded-xl px-3 text-[15px] font-semibold text-accent-ink"
+            className="pressable -mr-2 min-h-12 shrink-0 rounded-xl px-3 text-[15px] font-semibold text-accent-ink"
             onClick={() => {
               toast.hide(t.id);
               t.onAction?.();

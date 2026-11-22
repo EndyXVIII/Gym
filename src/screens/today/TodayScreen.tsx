@@ -313,7 +313,7 @@ function RestCard({ next, onOpenAny }: { next: { day: Day; date: string } | null
 function BlockCompletedCard({ onStart }: { onStart: () => void }) {
   return (
     <section aria-label="Blocco completato" className="rounded-[22px] border border-[color-mix(in_srgb,var(--warning)_45%,transparent)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--warning)_16%,var(--surface)),var(--surface)_65%)] p-5">
-      <p className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.08em] text-warning uppercase">
+      <p className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.08em] text-warning-ink uppercase">
         <Sparkles size={16} aria-hidden /> 7 settimane fatte
       </p>
       <h2 className="mt-1 text-[28px] leading-tight font-bold">Blocco completato</h2>

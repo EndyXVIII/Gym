@@ -5,7 +5,7 @@ import type { SetRowModel } from '../../lib/sessionRows';
 import type { RowValues } from '../../lib/sessionOps';
 import { cx } from '../../components/ui';
 
-export const SET_GRID = 'grid grid-cols-[36px_48px_minmax(0,1fr)_48px_60px_56px] items-center gap-1';
+export const SET_GRID = 'grid grid-cols-[36px_48px_minmax(0,1fr)_48px_56px_56px] items-center gap-1';
 
 /**
  * One set: number, weight (− / +), reps, check.
@@ -103,13 +103,14 @@ export const SetRow = memo(function SetRow({
 
   const number = row.isWarmup ? 'R' : String(row.workingNumber ?? '');
   const setName = row.isWarmup ? 'riscaldamento' : `serie ${row.workingNumber}`;
-  const big = w.length >= 5 ? 'text-[24px]' : 'text-[28px]';
+  // 28 px always; long values ("102,5") get tighter letter spacing to fit the column.
+  const big = w.length >= 5 ? 'text-[28px] tracking-[-0.06em]' : 'text-[28px]';
 
   return (
     <div
       className={cx(
         SET_GRID,
-        'rounded-2xl px-1 py-1 transition-colors duration-200',
+        'rounded-2xl px-0.5 py-1 transition-colors duration-200',
         row.done && 'bg-[color-mix(in_srgb,var(--success)_12%,transparent)]',
         row.isWarmup && !row.done && 'bg-[color-mix(in_srgb,var(--warning)_7%,transparent)]',
       )}
@@ -120,7 +121,7 @@ export const SetRow = memo(function SetRow({
         aria-label={`${setName[0].toUpperCase()}${setName.slice(1)}: opzioni (riscaldamento, elimina)`}
         className={cx(
           'pressable relative flex h-12 items-center justify-center rounded-xl text-[17px] font-bold tnum before:absolute before:-inset-x-1.5 before:-inset-y-1',
-          row.isWarmup ? 'text-warning' : row.done ? 'text-success-ink' : 'text-muted',
+          row.isWarmup ? 'text-warning-ink' : row.done ? 'text-success-ink' : 'text-muted',
         )}
       >
         {number}

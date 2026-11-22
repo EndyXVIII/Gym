@@ -8,12 +8,16 @@ import { ToastHost } from './components/Toast';
 import { ScreenSkeleton } from './components/ui';
 import { UpdatePrompt } from './app/UpdatePrompt';
 import { TodayScreen } from './screens/today/TodayScreen';
+import { startSync } from './lib/syncRunner';
+import { hasStoredSession, supabaseConfigured } from './lib/supabase';
+import { AUTH_SKIP_KEY } from './screens/auth/authKeys';
 
 const SessionScreen = lazy(() => import('./screens/session/SessionScreen'));
 const ProgramScreen = lazy(() => import('./screens/program/ProgramScreen'));
 const HistoryScreen = lazy(() => import('./screens/history/HistoryScreen'));
 const ExerciseHistoryScreen = lazy(() => import('./screens/history/ExerciseHistoryScreen'));
 const SettingsScreen = lazy(() => import('./screens/settings/SettingsScreen'));
+const SignInScreen = lazy(() => import('./screens/auth/SignInScreen'));
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -29,6 +33,10 @@ export default function App() {
     void requestPersistentStorage();
     return installAudioUnlock();
   }, []);
+
+  useEffect(() => {
+    if (ready) return startSync();
+  }, [ready]);
 
   if (error) {
     return (
@@ -46,9 +54,24 @@ export default function App() {
   );
 }
 
+/** First launch with Supabase configured and no session on this device: sign in first (or skip). */
+function needsSignIn(): boolean {
+  if (!supabaseConfigured || hasStoredSession()) return false;
+  try {
+    return localStorage.getItem(AUTH_SKIP_KEY) !== '1';
+  } catch {
+    return false;
+  }
+}
+
 function Shell() {
-  const [path] = useLocation();
+  const [path, navigate] = useLocation();
   const inSession = path.startsWith('/sessione/');
+  const fullScreen = inSession || path === '/accedi';
+
+  useEffect(() => {
+    if (path !== '/accedi' && needsSignIn()) navigate('/accedi', { replace: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -56,7 +79,7 @@ function Shell() {
 
   return (
     <>
-      <main className={inSession ? '' : 'pb-[calc(88px+env(safe-area-inset-bottom))]'}>
+      <main className={fullScreen ? '' : 'pb-[calc(88px+env(safe-area-inset-bottom))]'}>
         <Suspense fallback={<ScreenSkeleton />}>
           <Switch>
             <Route path="/">
@@ -74,13 +97,16 @@ function Shell() {
             <Route path="/impostazioni">
               <SettingsScreen />
             </Route>
+            <Route path="/accedi">
+              <SignInScreen />
+            </Route>
             <Route>
               <div className="px-6 pt-24 text-center text-muted">Pagina non trovata.</div>
             </Route>
           </Switch>
         </Suspense>
       </main>
-      {!inSession && <TabBar />}
+      {!fullScreen && <TabBar />}
       <ToastHost bottom={inSession ? 168 : 80} />
       <UpdatePrompt />
     </>

@@ -79,7 +79,7 @@ function MusclePicker({ label, selected, onToggle, tone }: { label: string; sele
               aria-pressed={on}
               onClick={() => onToggle(m)}
               className={cx(
-                'pressable min-h-10 rounded-full border px-3 text-[14px]',
+                'pressable min-h-12 rounded-full border px-3.5 text-[14px]',
                 on
                   ? tone === 'accent'
                     ? 'border-transparent bg-[var(--upper)] font-semibold text-on-accent'

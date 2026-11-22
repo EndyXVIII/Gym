@@ -33,7 +33,7 @@ export function WeekProgress({ week, completed }: { week: number; completed?: bo
       </div>
       <div className="mt-1.5 grid grid-cols-7 gap-1.5 text-center text-[11px] text-muted tnum" aria-hidden>
         {Array.from({ length: BLOCK_WEEKS }, (_, i) => (
-          <span key={i} className={cx(i + 1 === week && !completed && 'font-semibold text-ink', i + 1 === DELOAD_WEEK && 'text-warning')}>
+          <span key={i} className={cx(i + 1 === week && !completed && 'font-semibold text-ink', i + 1 === DELOAD_WEEK && 'text-warning-ink')}>
             {i + 1 === DELOAD_WEEK ? 'Scarico' : i + 1}
           </span>
         ))}

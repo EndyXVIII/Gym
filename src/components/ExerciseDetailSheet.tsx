@@ -48,15 +48,15 @@ export function ExerciseDetailSheet({
       <p className="mt-1.5 text-center text-[12px] text-muted">Apre una ricerca su YouTube in una nuova scheda</p>
 
       {exercise && (
-        <dl className="mt-5 flex flex-col gap-3">
-          <div>
+        <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3">
+          <div className="col-span-2">
             <dt className="mb-1.5 text-[13px] font-medium text-muted">Muscoli principali</dt>
             <dd className="flex flex-wrap gap-1.5">
               {exercise.primary.length ? exercise.primary.map((m) => <Chip key={m} tone="accent">{muscleLabel(m)}</Chip>) : <span className="text-muted">non indicati</span>}
             </dd>
           </div>
           {exercise.secondary.length > 0 && (
-            <div>
+            <div className="col-span-2">
               <dt className="mb-1.5 text-[13px] font-medium text-muted">Secondari</dt>
               <dd className="flex flex-wrap gap-1.5">
                 {exercise.secondary.map((m) => (
@@ -67,15 +67,13 @@ export function ExerciseDetailSheet({
               </dd>
             </div>
           )}
-          <div className="flex gap-6">
-            <div>
-              <dt className="text-[13px] font-medium text-muted">Attrezzo</dt>
-              <dd className="text-[15px]">{equipmentLabel(exercise.equipment)}</dd>
-            </div>
-            <div>
-              <dt className="text-[13px] font-medium text-muted">Scatto di carico</dt>
-              <dd className="text-[15px] tnum">{formatKg(loadStep)} kg</dd>
-            </div>
+          <div>
+            <dt className="text-[13px] font-medium text-muted">Attrezzo</dt>
+            <dd className="text-[15px]">{equipmentLabel(exercise.equipment)}</dd>
+          </div>
+          <div>
+            <dt className="text-[13px] font-medium text-muted">Scatto di carico</dt>
+            <dd className="text-[15px] tnum">{formatKg(loadStep)} kg</dd>
           </div>
         </dl>
       )}

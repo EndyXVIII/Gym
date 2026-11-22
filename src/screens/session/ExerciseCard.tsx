@@ -196,7 +196,7 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
       <div className="flex items-start gap-3 px-3 pt-3">
         {slot ? <LabelBadge label={slot.label} /> : <LabelBadge label="+" muted />}
         <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="text-[17px] leading-snug font-semibold">{name}</h3>
+          <h2 className="text-[17px] leading-snug font-semibold">{name}</h2>
           {substitutedFrom && <p className="mt-0.5 text-[13px] text-muted">Sostituisce per oggi: {substitutedFrom}</p>}
           {!slot && <p className="mt-0.5 text-[13px] text-muted">Fuori programma</p>}
         </div>
@@ -205,10 +205,10 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
             <Check size={16} strokeWidth={3.2} aria-hidden />
           </span>
         )}
-        <IconButton label={`Dettagli: ${name}`} size={44} className="-mr-1 shrink-0 text-muted" onClick={p.onDetails}>
+        <IconButton label={`Dettagli: ${name}`} size={48} className="-mr-1 shrink-0 text-muted" onClick={p.onDetails}>
           <Info size={21} aria-hidden />
         </IconButton>
-        <IconButton label={`Altre azioni: ${name}`} size={44} className="-mr-2 shrink-0 text-muted" onClick={() => setMenuOpen(true)}>
+        <IconButton label={`Altre azioni: ${name}`} size={48} className="-mr-2 shrink-0 text-muted" onClick={() => setMenuOpen(true)}>
           <MoreHorizontal size={22} aria-hidden />
         </IconButton>
       </div>
@@ -229,10 +229,18 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
       )}
 
       {exercise && (exercise.primary.length > 0 || exercise.secondary.length > 0) && (
-        <p className="mt-2 px-3 text-[13px] leading-snug">
-          <span className="text-accent-ink">{exercise.primary.map(muscleLabel).join(', ')}</span>
-          {exercise.secondary.length > 0 && <span className="text-muted"> · {exercise.secondary.map(muscleLabel).join(', ')}</span>}
-        </p>
+        <ul className="mt-2 flex flex-wrap gap-1.5 px-3" aria-label="Muscoli">
+          {exercise.primary.map((m) => (
+            <li key={m}>
+              <Chip tone="accent">{muscleLabel(m)}</Chip>
+            </li>
+          ))}
+          {exercise.secondary.map((m) => (
+            <li key={m}>
+              <Chip tone="muted">{muscleLabel(m)}</Chip>
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="mt-3 flex flex-col gap-1.5 px-3">
@@ -269,9 +277,9 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
         {hint.kind === 'first' && <p className="px-1 text-[14px] text-muted">{hint.text}</p>}
       </div>
 
-      <div className="mt-2 px-2.5 pb-1">
+      <div className="mt-2 px-1.5 pb-1">
         {rows.length > 0 && (
-          <div className={cx(SET_GRID, 'px-1 pb-1 text-[13px] font-medium text-muted')} aria-hidden>
+          <div className={cx(SET_GRID, 'px-0.5 pb-1 text-[13px] font-medium text-muted')} aria-hidden>
             <span className="text-center">Serie</span>
             <span className="col-span-3 text-center">Peso (kg)</span>
             <span className="text-center">Rip.</span>

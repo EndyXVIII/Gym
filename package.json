@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "icons": "node scripts/make-icons.mjs",
-    "images": "node scripts/copy-exercise-images.mjs"
+    "images": "node scripts/copy-exercise-images.mjs",
+    "e2e": "node e2e/acceptance.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

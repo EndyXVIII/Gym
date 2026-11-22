@@ -43,7 +43,7 @@ export default function ProgramScreen({ dayKey }: { dayKey?: string }) {
             aria-current={d.id === day?.id ? 'page' : undefined}
             onClick={() => navigate(`/programma/${encodeURIComponent(d.key)}`, { replace: true })}
             className={cx(
-              'pressable flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-semibold whitespace-nowrap',
+              'pressable flex h-12 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-semibold whitespace-nowrap',
               d.id === day?.id ? 'border-transparent bg-accent text-on-accent' : 'border-line bg-surface text-ink',
             )}
           >
@@ -58,7 +58,7 @@ export default function ProgramScreen({ dayKey }: { dayKey?: string }) {
             navigate(`/programma/${encodeURIComponent(d.key)}`, { replace: true });
             toast.show('Giorno aggiunto: scegli il giorno della settimana');
           }}
-          className="pressable flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-line px-4 text-[15px] font-medium text-muted"
+          className="pressable flex h-12 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-line px-4 text-[15px] font-medium text-muted"
         >
           <Plus size={18} aria-hidden /> Giorno
         </button>

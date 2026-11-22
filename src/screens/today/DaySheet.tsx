@@ -64,12 +64,12 @@ export function DaySheet({
               {g.map((s, i) => {
                 const n = setsForWeek(s.sets, week, settings.extraSets);
                 return (
-                  <div key={s.id} className={cx('flex items-center gap-3 px-3 py-2.5', i > 0 && 'border-t border-line', n === 0 && 'opacity-50')}>
+                  <div key={s.id} className={cx('flex items-center gap-3 px-3 py-2.5', i > 0 && 'border-t border-line')}>
                     <span className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] px-1 text-[13px] font-bold text-accent-ink tnum">
                       {s.label}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-medium">{s.name}</span>
+                      <span className={cx('block truncate text-[15px] font-medium', n === 0 && 'text-muted')}>{s.name}</span>
                       <span className="block text-[13px] text-muted tnum">
                         {n === 0 ? 'dalla settimana 4' : `${n} × ${s.reps} · RIR ${targetRir(s.rir, s.kind, week)}`}
                         {n > 0 && s.restSeconds > 0 && ` · ${formatRest(s.restSeconds)}`}

@@ -64,7 +64,7 @@ export function FinishSheet({
       </dl>
       <div className="mt-4">
         <p className="mb-2 flex items-center gap-2 text-[15px] font-semibold">
-          <Trophy size={18} className="text-warning" aria-hidden /> Nuovi record
+          <Trophy size={18} className="text-warning-ink" aria-hidden /> Nuovi record
         </p>
         {prLogs.length === 0 ? (
           <p className="text-[14px] text-muted">Nessun record oggi. Conta anche la costanza.</p>

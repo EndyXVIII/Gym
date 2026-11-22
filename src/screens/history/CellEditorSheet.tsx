@@ -158,7 +158,7 @@ function CellRow({ log, index }: { log: SetLog; index: number }) {
         />
         <IconButton
           label={`Elimina serie ${index + 1}`}
-          className="text-danger"
+          className="text-danger-ink"
           onClick={() => {
             void action('Serie eliminata', (wr) => wr.remove('setLogs', log.id));
             toast.show('Serie eliminata', { actionLabel: 'Annulla', onAction: () => void undoStore.undoLast() });

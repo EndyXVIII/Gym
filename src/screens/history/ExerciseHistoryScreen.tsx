@@ -93,7 +93,7 @@ export default function ExerciseHistoryScreen({ exerciseKey }: { exerciseKey: st
                             l.isWarmup ? 'bg-raised text-muted' : 'bg-[color-mix(in_srgb,var(--accent)_14%,var(--raised))]',
                           )}
                         >
-                          {l.isWarmup && <span className="text-[11px] font-bold text-warning">R</span>}
+                          {l.isWarmup && <span className="text-[11px] font-bold text-warning-ink">R</span>}
                           {l.weightKg === null ? '—' : formatKg(l.weightKg)} × {displayReps(l)}
                           {prs.has(l.id) && <Badge className="ml-0.5">PR</Badge>}
                         </span>

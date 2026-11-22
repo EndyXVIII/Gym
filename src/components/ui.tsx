@@ -11,12 +11,12 @@ const variants: Record<Variant, string> = {
   primary: 'bg-accent text-on-accent font-semibold shadow-[0_6px_20px_-8px_var(--accent)]',
   secondary: 'bg-raised text-ink border border-line font-medium',
   ghost: 'text-ink font-medium hover:bg-raised',
-  danger: 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] text-danger font-semibold border border-[color-mix(in_srgb,var(--danger)_35%,transparent)]',
+  danger: 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] text-danger-ink font-semibold border border-[color-mix(in_srgb,var(--danger)_35%,transparent)]',
   success: 'bg-success text-on-accent font-semibold',
 };
 
 const sizes: Record<Size, string> = {
-  sm: 'min-h-10 px-3 text-[14px] rounded-xl gap-1.5',
+  sm: 'min-h-12 px-3 text-[14px] rounded-xl gap-1.5',
   md: 'min-h-12 px-4 text-[15px] rounded-2xl gap-2',
   lg: 'min-h-14 px-5 text-[17px] rounded-2xl gap-2',
 };
@@ -98,7 +98,7 @@ export function Chip({ children, className, tone = 'default', icon }: { children
         tone === 'default' && 'bg-raised text-ink',
         tone === 'muted' && 'bg-raised text-muted',
         tone === 'accent' && 'bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] text-accent-ink',
-        tone === 'warning' && 'bg-[color-mix(in_srgb,var(--warning)_16%,transparent)] text-warning',
+        tone === 'warning' && 'bg-[color-mix(in_srgb,var(--warning)_16%,transparent)] text-warning-ink',
         tone === 'success' && 'bg-[color-mix(in_srgb,var(--success)_16%,transparent)] text-success-ink',
         className,
       )}
@@ -195,7 +195,7 @@ export function Segmented<T extends string>({
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cx(
-            'pressable min-h-10 flex-1 rounded-xl px-2 text-[14px] font-medium',
+            'pressable min-h-12 flex-1 rounded-xl px-2 text-[14px] font-medium',
             value === o.value ? 'bg-surface text-ink shadow-[0_1px_0_var(--border),0_4px_12px_-6px_rgb(0_0_0/0.5)]' : 'text-muted',
           )}
         >

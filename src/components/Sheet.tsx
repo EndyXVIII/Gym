@@ -117,12 +117,12 @@ export function Sheet({
             <h2 id={id} className="min-w-0 truncate text-[19px] font-bold text-ink">
               {title}
             </h2>
-            <IconButton label="Chiudi" onClick={onClose} size={44} className="-mr-2 text-muted">
+            <IconButton label="Chiudi" onClick={onClose} size={48} className="-mr-2 text-muted">
               <X size={22} />
             </IconButton>
           </div>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>
+        <div tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 focus-visible:outline-offset-[-2px]">{children}</div>
         {footer && <div className="shrink-0 border-t border-line px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)]">{footer}</div>}
         {!footer && <div className="pb-[env(safe-area-inset-bottom)]" />}
       </div>
@@ -156,10 +156,10 @@ export function ActionSheet({ open, onClose, title, actions }: { open: boolean; 
               }}
               className={cx(
                 'pressable flex min-h-14 w-full items-center gap-3 rounded-2xl px-3 text-left hover:bg-raised disabled:opacity-40',
-                a.tone === 'danger' ? 'text-danger' : 'text-ink',
+                a.tone === 'danger' ? 'text-danger-ink' : 'text-ink',
               )}
             >
-              {a.icon && <span className={cx('shrink-0', a.tone === 'danger' ? 'text-danger' : 'text-muted')}>{a.icon}</span>}
+              {a.icon && <span className={cx('shrink-0', a.tone === 'danger' ? 'text-danger-ink' : 'text-muted')}>{a.icon}</span>}
               <span className="min-w-0">
                 <span className="block text-[16px] font-medium">{a.label}</span>
                 {a.description && <span className="block text-[13px] text-muted">{a.description}</span>}

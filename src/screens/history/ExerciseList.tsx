@@ -101,7 +101,7 @@ function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => voi
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={cx('pressable min-h-10 shrink-0 rounded-full border px-3.5 text-[14px] whitespace-nowrap', on ? 'border-transparent bg-ink font-semibold text-bg' : 'border-line bg-surface text-muted')}
+      className={cx('pressable min-h-12 shrink-0 rounded-full border px-4 text-[14px] whitespace-nowrap', on ? 'border-transparent bg-ink font-semibold text-bg' : 'border-line bg-surface text-muted')}
     >
       {children}
     </button>

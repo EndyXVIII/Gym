@@ -17,7 +17,9 @@
   --success: #34c48b;
   --success-ink: #3fd197;
   --warning: #f5b94c;
+  --warning-ink: #f5b94c;
   --danger: #ff6b6b;
+  --danger-ink: #ff7b7b;
   --on-accent: #0b0f14;
   --focus: #8ab4ff;
   --scrim: rgb(3 6 10 / 0.72);
@@ -36,9 +38,11 @@
     --border: #d3dae4;
     --text: #0e1520;
     --muted: #536072;
-    --upper-ink: #1f5fd6;
-    --lower-ink: #0f7a52;
-    --success-ink: #0f7a52;
+    --upper-ink: #1a52bd;
+    --lower-ink: #0b6644;
+    --success-ink: #0b6644;
+    --warning-ink: #8a5a00;
+    --danger-ink: #c0262d;
     --focus: #1f5fd6;
     --scrim: rgb(14 21 32 / 0.45);
     --tabbar: rgb(255 255 255 / 0.86);
@@ -54,9 +58,11 @@
   --border: #d3dae4;
   --text: #0e1520;
   --muted: #536072;
-  --upper-ink: #1f5fd6;
-  --lower-ink: #0f7a52;
-  --success-ink: #0f7a52;
+  --upper-ink: #1a52bd;
+  --lower-ink: #0b6644;
+  --success-ink: #0b6644;
+  --warning-ink: #8a5a00;
+  --danger-ink: #c0262d;
   --focus: #1f5fd6;
   --scrim: rgb(14 21 32 / 0.45);
   --tabbar: rgb(255 255 255 / 0.86);
@@ -78,6 +84,8 @@
   --color-success: var(--success);
   --color-success-ink: var(--success-ink);
   --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger-ink: var(--danger-ink);
   --color-danger: var(--danger);
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;

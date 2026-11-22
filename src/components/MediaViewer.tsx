@@ -82,7 +82,7 @@ export function MediaViewer({ open, onClose, media, exercise, name, bg }: { open
                     aria-selected={i === index}
                     aria-label={POSE_NAMES[i]}
                     onClick={() => go(i - index)}
-                    className="flex h-11 w-11 items-center justify-center"
+                    className="flex h-12 w-12 items-center justify-center"
                   >
                     <span className={cx('h-2 rounded-full transition-all duration-200', i === index ? 'w-6 bg-white' : 'w-2 bg-white/40')} />
                   </button>
