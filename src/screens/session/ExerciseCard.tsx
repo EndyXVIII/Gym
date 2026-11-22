@@ -192,7 +192,7 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
       aria-label={name}
       className={cx('scroll-mt-28 overflow-hidden transition-colors duration-200', complete && 'border-[color-mix(in_srgb,var(--success)_45%,transparent)]')}
     >
-      {p.media}
+      {p.media && <div className="px-3 pt-3">{p.media}</div>}
       <div className="flex items-start gap-3 px-3 pt-3">
         {slot ? <LabelBadge label={slot.label} /> : <LabelBadge label="+" muted />}
         <div className="min-w-0 flex-1 pt-0.5">

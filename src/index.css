@@ -138,6 +138,16 @@
   }
 }
 
+/* Illustrations come on a light solid background: a little dimmer on the dark theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .dark-dim {
+    filter: brightness(0.88) saturate(0.95);
+  }
+}
+:root[data-theme='dark'] .dark-dim {
+  filter: brightness(0.88) saturate(0.95);
+}
+
 /* ------------------------------------------------------------------ helpers */
 @utility tnum {
   font-variant-numeric: tabular-nums;

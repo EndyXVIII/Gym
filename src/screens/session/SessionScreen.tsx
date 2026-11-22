@@ -21,6 +21,8 @@ import { SyncDot } from '../../components/SyncDot';
 import { toast } from '../../components/Toast';
 import { RulesSheet } from '../today/RulesSheet';
 import { ExerciseCard } from './ExerciseCard';
+import { ExerciseMedia } from '../../components/ExerciseMedia';
+import { MediaControls } from '../../components/MediaControls';
 import { RestTimerBar } from './RestTimerBar';
 import { FinishSheet } from './FinishSheet';
 
@@ -225,6 +227,7 @@ function SessionBody({ view }: { view: SessionView }) {
                     substitutedFrom={substituted ? s.name : null}
                     prs={view.prs}
                     loadStep={loadStepFor(key)}
+                    media={<ExerciseMedia exercise={view.exercises.get(key)} name={substituted ? (view.exercises.get(key)?.name ?? key) : s.name} className="mx-auto" />}
                     onChecked={onChecked}
                     onDetails={() => setDetailsFor({ slot: s, key })}
                     onSubstitute={() => setSubstituteFor(s)}
@@ -252,6 +255,7 @@ function SessionBody({ view }: { view: SessionView }) {
             substitutedFrom={null}
             prs={view.prs}
             loadStep={loadStepFor(key)}
+            media={<ExerciseMedia exercise={view.exercises.get(key)} name={view.exercises.get(key)?.name ?? key} />}
             onDetails={() => setDetailsFor({ slot: null, key })}
             onSubstitute={() => undefined}
             onClearSubstitution={() => undefined}
@@ -321,7 +325,13 @@ function SessionBody({ view }: { view: SessionView }) {
         exercise={detailsFor ? view.exercises.get(detailsFor.key) : undefined}
         slot={detailsFor?.slot ?? null}
         loadStep={detailsFor ? loadStepFor(detailsFor.key) : DEFAULT_LOAD_STEP}
-      />
+      >
+        {detailsFor && view.exercises.get(detailsFor.key) && (
+          <div className="mt-5">
+            <MediaControls exercise={view.exercises.get(detailsFor.key)!} />
+          </div>
+        )}
+      </ExerciseDetailSheet>
       <ExercisePicker
         open={!!substituteFor}
         onClose={() => setSubstituteFor(null)}

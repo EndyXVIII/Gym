@@ -6,6 +6,8 @@ import { formatKg } from '../../lib/format';
 import type { Exercise, MuscleKey } from '../../lib/types';
 import { Sheet } from '../../components/Sheet';
 import { cx, Field, inputClass } from '../../components/ui';
+import { ExerciseMedia } from '../../components/ExerciseMedia';
+import { MediaControls } from '../../components/MediaControls';
 
 const STEPS = [0.5, 1, 1.25, 2, 2.5, 5];
 
@@ -26,6 +28,8 @@ export function ExerciseEditorSheet({ open, onClose, exercise, children }: { ope
   return (
     <Sheet open={open} onClose={onClose} title="Esercizio in libreria">
       <div className="flex flex-col gap-4 pb-2">
+        <ExerciseMedia exercise={exercise} name={exercise.name} />
+        <MediaControls exercise={exercise} />
         <Field label="Nome" htmlFor="ex-name" hint="Vale per tutti i giorni che usano questo esercizio.">
           <input id="ex-name" lang="en" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== exercise.name && void updateExercise(exercise.id, { name: name.trim() })} />
         </Field>
