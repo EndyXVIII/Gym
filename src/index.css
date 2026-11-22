@@ -1,0 +1,275 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ tokens
+   Dark (OLED) is the main design. Light is available, and "system" follows iOS. */
+:root {
+  color-scheme: dark;
+  --bg: #0b0f14;
+  --surface: #121821;
+  --raised: #1a2230;
+  --border: #243044;
+  --text: #e8eef6;
+  --muted: #9aa7b8;
+  --upper: #4c8dff;
+  --lower: #34c48b;
+  --upper-ink: #6ea3ff;
+  --lower-ink: #3fd197;
+  --success: #34c48b;
+  --success-ink: #3fd197;
+  --warning: #f5b94c;
+  --danger: #ff6b6b;
+  --on-accent: #0b0f14;
+  --focus: #8ab4ff;
+  --scrim: rgb(3 6 10 / 0.72);
+  --tabbar: rgb(11 15 20 / 0.82);
+  --shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  --accent: var(--upper);
+  --accent-ink: var(--upper-ink);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg: #f2f4f8;
+    --surface: #ffffff;
+    --raised: #e9edf3;
+    --border: #d3dae4;
+    --text: #0e1520;
+    --muted: #536072;
+    --upper-ink: #1f5fd6;
+    --lower-ink: #0f7a52;
+    --success-ink: #0f7a52;
+    --focus: #1f5fd6;
+    --scrim: rgb(14 21 32 / 0.45);
+    --tabbar: rgb(255 255 255 / 0.86);
+    --shadow: 0 10px 30px rgb(14 21 32 / 0.12);
+  }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f2f4f8;
+  --surface: #ffffff;
+  --raised: #e9edf3;
+  --border: #d3dae4;
+  --text: #0e1520;
+  --muted: #536072;
+  --upper-ink: #1f5fd6;
+  --lower-ink: #0f7a52;
+  --success-ink: #0f7a52;
+  --focus: #1f5fd6;
+  --scrim: rgb(14 21 32 / 0.45);
+  --tabbar: rgb(255 255 255 / 0.86);
+  --shadow: 0 10px 30px rgb(14 21 32 / 0.12);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-upper: var(--upper);
+  --color-lower: var(--lower);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --radius-card: 18px;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ------------------------------------------------------------------ base */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    background: var(--bg);
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+  #root {
+    max-width: 520px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    position: relative;
+  }
+  button {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* iOS doesn't zoom on focus at >= 16px */
+    font-family: inherit;
+    color: inherit;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 0;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--upper) 40%, transparent);
+  }
+}
+
+/* ------------------------------------------------------------------ helpers */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+@utility pt-safe {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pressable {
+  transition:
+    transform 150ms var(--ease-out-soft),
+    background-color 180ms ease-out,
+    border-color 180ms ease-out,
+    opacity 180ms ease-out;
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 0%, var(--raised) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 14px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.anim-pop {
+  animation:
+    pop 220ms var(--ease-out-soft),
+    ring 520ms ease-out;
+}
+.anim-fade {
+  animation: fade-in 180ms ease-out;
+}
+.anim-slide-up {
+  animation: slide-up 220ms var(--ease-out-soft);
+}
+.anim-sheet {
+  animation: sheet-up 220ms var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
