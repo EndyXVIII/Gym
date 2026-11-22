@@ -93,12 +93,19 @@ export class Writer {
   }
 }
 
-/** Runs `fn` with a Writer, then notifies sync. Returns the writer so callers can register undo. */
+/**
+ * Runs `fn` with a Writer, then notifies sync. Returns the writer so callers can register undo.
+ * No explicit Dexie transaction on purpose: nested native async functions inside one make
+ * Dexie commit early (PrematureCommitError). Each write commits on its own; actions are small.
+ */
 export async function write<R>(fn: (w: Writer) => Promise<R>): Promise<{ result: R; writer: Writer }> {
   const w = new Writer();
-  const result = await db.transaction('rw', ['exercises', 'days', 'slots', 'sessions', 'setLogs', 'settings', 'media'], () => fn(w));
-  if (w.changed) notifyLocalChange();
-  return { result, writer: w };
+  try {
+    const result = await fn(w);
+    return { result, writer: w };
+  } finally {
+    if (w.changed) notifyLocalChange();
+  }
 }
 
 /** Puts records back as they were (as new writes, so the undo syncs too). */

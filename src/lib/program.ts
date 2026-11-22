@@ -241,6 +241,37 @@ export function relabel<T extends Pick<Slot, 'id' | 'position' | 'label' | 'supe
   return out;
 }
 
+/**
+ * After a reorder: keeps each superset pair adjacent (the partner follows the
+ * first member), gives roles by order (first = a, second = b; "a" goes straight
+ * to "b", so its rest is 0), renumbers positions and labels.
+ */
+export function normalizeOrder<T extends Pick<Slot, 'id' | 'position' | 'label' | 'superset' | 'restSeconds'>>(ordered: readonly T[]): T[] {
+  const out: T[] = [];
+  const placed = new Set<string>();
+  for (const s of ordered) {
+    if (placed.has(s.id)) continue;
+    out.push(s);
+    placed.add(s.id);
+    if (s.superset) {
+      const partner = ordered.find((x) => x.id !== s.id && x.superset?.group === s.superset!.group && !placed.has(x.id));
+      if (partner) {
+        out.push(partner);
+        placed.add(partner.id);
+      }
+    }
+  }
+  const withRoles = out.map((s, i) => {
+    if (!s.superset) return { ...s, position: i + 1 };
+    const members = out.filter((x) => x.superset?.group === s.superset!.group);
+    if (members.length < 2) return { ...s, superset: null, position: i + 1 }; // lone half: no longer a superset
+    const role: 'a' | 'b' = members[0].id === s.id ? 'a' : 'b';
+    const pairRest = Math.max(...members.map((m) => m.restSeconds)) || 60;
+    return { ...s, position: i + 1, superset: { group: s.superset.group, role }, restSeconds: role === 'a' ? 0 : pairRest };
+  });
+  return relabel(withRoles);
+}
+
 /** Groups consecutive superset members, in order: [[1], [2], [6a, 6b]]. */
 export function groupSlots<T extends Pick<Slot, 'superset' | 'position'>>(slots: readonly T[]): T[][] {
   const sorted = [...slots].sort((a, b) => a.position - b.position);
