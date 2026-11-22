@@ -98,7 +98,7 @@ export function Sheet({
         aria-labelledby={labelledBy ?? (title ? id : undefined)}
         tabIndex={-1}
         className={cx(
-          'anim-sheet relative flex max-h-[min(88dvh,820px)] w-full max-w-[520px] flex-col rounded-t-[24px] border border-b-0 border-line bg-surface shadow-[var(--shadow)] outline-none',
+          'anim-sheet relative flex max-h-[min(88dvh,820px)] w-full max-w-[520px] min-w-0 flex-col rounded-t-[24px] border border-b-0 border-line bg-surface shadow-[var(--shadow)] outline-none',
           className,
         )}
       >
