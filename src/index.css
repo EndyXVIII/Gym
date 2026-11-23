@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ tokens
    Dark (OLED) is the main design, light is available, "system" follows iOS.
    Upper days are blue -> violet, lower days green -> teal; warm tones (amber, pink)
-   are for records, the deload and celebrations. */
+   are for records and celebrations. */
 :root {
   color-scheme: dark;
   --bg: #090d16;

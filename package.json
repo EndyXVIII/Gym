@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "icons": "node scripts/make-icons.mjs",
     "images": "node scripts/copy-exercise-images.mjs",
-    "e2e": "node e2e/acceptance.mjs"
+    "e2e": "node e2e/acceptance.mjs",
+    "sets": "node scripts/count-direct-sets.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

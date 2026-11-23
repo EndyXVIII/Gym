@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { BookOpen, Check, ChevronRight, Clock3, Dumbbell, Layers, Moon, Play, RotateCcw, Sparkles, Timer, Zap } from 'lucide-react';
 import { useSettings } from '../../app/SettingsContext';
 import { useNow, useToday } from '../../lib/hooks';
-import { addDays, dayPlanSummary, isoWeekday, weekInfo, weekRule, type WeekInfo } from '../../lib/program';
+import { addDays, BLOCK_WEEKS, dayPlanSummary, isoWeekday, weekInfo, weekRule, type WeekInfo } from '../../lib/program';
 import { loadExerciseMap, loadToday, type TodayData } from '../../lib/queries';
 import { loadWeekMuscles } from '../../lib/muscleQueries';
 import { FULL_AT_WEEK, totalSerie } from '../../lib/muscleStats';
@@ -13,7 +13,7 @@ import { startNewBlock } from '../../lib/settingsOps';
 import { restTimer } from '../../lib/timer';
 import { capitalize, formatDateLong, formatSeconds, greeting, plural, weekdayName, WEEKDAYS_SHORT_IT } from '../../lib/format';
 import type { Day, Exercise, Session, Slot } from '../../lib/types';
-import { accentStyle, Badge, Button, Card, cx, IconTile, ScreenSkeleton, SectionTitle } from '../../components/ui';
+import { accentStyle, Button, Card, cx, IconTile, ScreenSkeleton, SectionTitle } from '../../components/ui';
 import { WeekProgress } from '../../components/WeekProgress';
 import { SyncDot } from '../../components/SyncDot';
 import { ExerciseThumb } from '../../components/ExerciseThumb';
@@ -69,10 +69,9 @@ export function TodayScreen() {
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-[20px] font-extrabold tnum">
-              Settimana {w.week} di 7
+              Settimana {w.week} di {BLOCK_WEEKS}
             </p>
-            {w.isDeload && <Badge tone="warning">Scarico</Badge>}
-            {w.overridden && !w.isDeload && <span className="text-[12px] font-medium text-muted">impostata a mano</span>}
+            {w.overridden && <span className="text-[12px] font-medium text-muted">impostata a mano</span>}
           </div>
           <WeekProgress week={w.week} completed={w.completed} />
           <button type="button" onClick={() => setRulesOpen(true)} className="pressable mt-4 flex min-h-14 w-full items-center gap-3 rounded-2xl bg-raised px-3 py-2 text-left">
@@ -403,7 +402,7 @@ function BlockCompletedCard({ onStart }: { onStart: () => void }) {
     >
       <Confetti />
       <p className="eyebrow flex items-center gap-2 text-warm-ink">
-        <Sparkles size={16} aria-hidden /> 7 settimane fatte
+        <Sparkles size={16} aria-hidden /> {BLOCK_WEEKS} settimane fatte
       </p>
       <h2 className="mt-1 text-[34px] leading-tight font-extrabold">Blocco completato</h2>
       <p className="mt-2 text-[15px] text-muted">Stesso programma, storico conservato. Il nuovo blocco parte lunedì dalla settimana 1.</p>

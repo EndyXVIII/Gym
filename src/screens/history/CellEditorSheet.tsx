@@ -88,8 +88,7 @@ export function CellEditorSheet({ target, onClose }: { target: CellTarget | null
       }
     >
       <p className="text-[14px] text-muted">
-        {day.title} · settimana {week}
-        {week === 7 ? ' (scarico)' : ''} · {formatDateLong(date)}
+        {day.title} · settimana {week} · {formatDateLong(date)}
       </p>
       {logs.length === 0 ? (
         <p className="mt-6 mb-2 text-center text-[15px] text-muted">{target.session?.skipped.includes(row.slotId ?? '') ? 'Saltato quella settimana.' : 'Nessuna serie registrata.'}</p>

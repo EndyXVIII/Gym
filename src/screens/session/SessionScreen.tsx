@@ -176,8 +176,7 @@ function SessionBody({ view }: { view: SessionView }) {
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[18px] font-extrabold">{day?.title ?? 'Allenamento'}</h1>
             <p className="truncate text-[13px] text-muted tnum">
-              Settimana {week}
-              {week === 7 ? ' · Scarico' : ''} · {finished ? capitalize(formatDateLong(session.date)) : `${formatDuration(minutes)} · ${doneSets} serie`}
+              Settimana {week} · {finished ? capitalize(formatDateLong(session.date)) : `${formatDuration(minutes)} · ${doneSets} serie`}
             </p>
           </div>
           <SyncDot className="px-2" />

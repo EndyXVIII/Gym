@@ -48,7 +48,7 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
   const repsMax = slot?.repsMax ?? 12;
   const rows = useMemo(() => buildRows(logs, skipped ? 0 : planned, last, repsMin), [logs, skipped, planned, last, repsMin]);
   const name = substitutedFrom ? (exercise?.name ?? exerciseKey) : (slot?.name ?? exercise?.name ?? exerciseKey);
-  const hint = progressionHint(last, { min: repsMin, max: repsMax }, loadStep, week);
+  const hint = progressionHint(last, { min: repsMin, max: repsMax }, loadStep);
   const lastLabel = last ? performanceLabel(last) : null;
   const complete = allWorkingDone(rows);
   const slotId = slot?.id ?? null;

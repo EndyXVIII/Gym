@@ -75,7 +75,6 @@ export default function ExerciseHistoryScreen({ exerciseKey }: { exerciseKey: st
                   {newWeek && (
                     <p className="mt-2 mb-2 px-1 text-[13px] font-semibold tracking-[0.06em] text-muted uppercase">
                       Settimana {session.week}
-                      {session.week === 7 ? ' · scarico' : ''}
                     </p>
                   )}
                   <button type="button" onClick={() => navigate(`/sessione/${session.id}`)} className="pressable w-full rounded-[18px] border border-line bg-surface p-3 text-left" style={accentStyle(day?.type)}>

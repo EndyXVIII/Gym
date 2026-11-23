@@ -4,7 +4,7 @@ import { cx } from '../../components/ui';
 
 /** The rules of my program sheet, with this week's rule highlighted. */
 export function RulesSheet({ open, onClose, week }: { open: boolean; onClose: () => void; week: number }) {
-  const currentTitle = week === 1 ? 'Settimana 1' : week <= 3 ? 'Settimane 2-3' : week <= 5 ? 'Settimane 4-5' : week === 6 ? 'Settimana 6' : 'Settimana 7';
+  const currentTitle = week === 1 ? 'Settimana 1' : week <= 3 ? 'Settimane 2-3' : week <= 5 ? 'Settimane 4-5' : 'Settimana 6';
   return (
     <Sheet open={open} onClose={onClose} title="Regole del programma">
       <ul className="flex flex-col gap-2 pb-2">

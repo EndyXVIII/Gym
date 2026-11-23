@@ -94,7 +94,6 @@ export function FinishSheet({
           <p className="mt-3 text-[28px] leading-tight font-extrabold">{finish ? (working.length > 0 ? 'Ottimo lavoro!' : 'Nessuna serie fatta') : 'Com’è andata'}</p>
           <p className="mt-1 text-[14px] text-muted">
             {day?.title ?? 'Allenamento'} · settimana {session.week}
-            {session.week === 7 ? ' (scarico)' : ''}
           </p>
         </section>
 

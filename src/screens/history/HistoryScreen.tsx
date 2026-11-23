@@ -5,7 +5,7 @@ import { ArrowUp, CalendarDays, ChevronRight, History } from 'lucide-react';
 import { useSettings } from '../../app/SettingsContext';
 import { useToday } from '../../lib/hooks';
 import { loadHistoryGrid, loadSessionList, type GridDay, type GridRow } from '../../lib/historyQueries';
-import { compareSets, displayReps, weekInfo } from '../../lib/program';
+import { BLOCK_WEEKS, compareSets, displayReps, weekInfo } from '../../lib/program';
 import { capitalize, formatDateShort, formatDateWithYear, formatKg, formatVolume } from '../../lib/format';
 import { accentStyle, Card, cx, EmptyState, IconTile, ScreenHeader, Segmented, Skeleton } from '../../components/ui';
 import { SyncDot } from '../../components/SyncDot';
@@ -140,7 +140,7 @@ function DayTable({ data, currentWeek, onCell }: { data: GridDay; currentWeek: n
                 <th scope="col" className="sticky left-0 z-10 w-[132px] min-w-[132px] border-b border-line bg-surface px-3 py-2.5 text-left text-[12px] font-bold text-muted uppercase">
                   Esercizio
                 </th>
-                {Array.from({ length: 7 }, (_, i) => (
+                {Array.from({ length: BLOCK_WEEKS }, (_, i) => (
                   <th
                     key={i}
                     scope="col"
@@ -150,7 +150,6 @@ function DayTable({ data, currentWeek, onCell }: { data: GridDay; currentWeek: n
                     )}
                   >
                     Sett. {i + 1}
-                    {i === 6 && <span className="block text-[10px] font-bold text-warm-ink">Scarico</span>}
                   </th>
                 ))}
               </tr>

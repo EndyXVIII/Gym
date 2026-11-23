@@ -141,7 +141,7 @@ function SlotForm({ slot }: { slot: Slot }) {
             <Stepper className="justify-center" label="Serie dalla settimana 4" value={slot.sets[1]} max={10} onChange={(v) => void updateSlot(slot.id, { sets: [slot.sets[0], v] })} />
           </div>
         </div>
-        <p className="mt-1.5 px-1 text-[12px] text-muted">0 nelle settimane 1-3 = l’esercizio compare dalla settimana 4. Lo scarico usa metà del secondo numero.</p>
+        <p className="mt-1.5 px-1 text-[12px] text-muted">0 nelle settimane 1-3 = l’esercizio compare dalla settimana 4.</p>
       </fieldset>
 
       <div className="grid grid-cols-2 gap-3">

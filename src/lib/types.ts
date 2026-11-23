@@ -144,7 +144,7 @@ export type ThemePref = 'system' | 'dark' | 'light';
 export interface Settings extends SyncFields {
   name: string;
   blockStartDate: ISODate;
-  /** 1..7, or null to follow the calendar. */
+  /** 1..6, or null to follow the calendar. */
   weekOverride: number | null;
   /** "Serie extra": use the second number of `sets` in weeks 4-6. */
   extraSets: boolean;

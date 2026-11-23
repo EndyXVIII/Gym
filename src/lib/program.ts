@@ -5,8 +5,8 @@
 import { formatKg, roundToStep } from './format';
 import type { ISODate, Session, SetLog, Settings, Slot, SlotKind } from './types';
 
-export const BLOCK_WEEKS = 7;
-export const DELOAD_WEEK = 7;
+/** The block is 6 weeks: weeks 1-3 with the first number of sets, weeks 4-6 with the second. */
+export const BLOCK_WEEKS = 6;
 export const DEFAULT_BLOCK_START: ISODate = '2026-11-16';
 export const DEFAULT_LOAD_STEP = 2.5;
 
@@ -71,22 +71,21 @@ export function weekdayFromName(name: string | null | undefined): number | null 
 
 /* ------------------------------------------------------------------ weeks */
 
-/** Calendar week of the block: 1 on the start date's week, 2 seven days later... (can be < 1 or > 7). */
+/** Calendar week of the block: 1 on the start date's week, 2 seven days later... (can be < 1 or > 6). */
 export function calendarWeek(blockStart: ISODate, today: ISODate): number {
   return Math.floor(daysBetween(blockStart, today) / 7) + 1;
 }
 
 export interface WeekInfo {
-  /** The week the app uses for sets, RIR and labels (1..7). */
+  /** The week the app uses for sets, RIR and labels (1..6). */
   week: number;
-  /** Week from the calendar, before clamping (can be < 1 or > 7). */
+  /** Week from the calendar, before clamping (can be < 1 or > 6). */
   calendar: number;
   overridden: boolean;
-  /** Past week 7 and not overridden: offer "Inizia un nuovo blocco". */
+  /** Past week 6 and not overridden: offer "Inizia un nuovo blocco". */
   completed: boolean;
   /** The block starts in the future. */
   notStarted: boolean;
-  isDeload: boolean;
 }
 
 export function weekInfo(settings: Pick<Settings, 'blockStartDate' | 'weekOverride'>, today: ISODate): WeekInfo {
@@ -100,7 +99,6 @@ export function weekInfo(settings: Pick<Settings, 'blockStartDate' | 'weekOverri
     overridden,
     completed: !overridden && calendar > BLOCK_WEEKS,
     notStarted: !overridden && calendar < 1,
-    isDeload: week === DELOAD_WEEK,
   };
 }
 
@@ -114,16 +112,11 @@ export function dateInBlock(blockStart: ISODate, week: number, isoWd: number): I
 /**
  * Working sets for a slot in a week.
  * Weeks 1-3: first number. Weeks 4-6: second number (first if "serie extra" is off).
- * Week 7 (deload): half of the weeks 4-6 number, rounded up, minimum 1 (0 stays 0).
  */
 export function setsForWeek(sets: readonly [number, number], week: number, extraSets = true): number {
   const [base, from4] = sets;
-  const w = clampWeek(week);
-  const heavy = extraSets ? from4 : base;
-  if (w <= 3) return base;
-  if (w <= 6) return heavy;
-  if (heavy <= 0) return 0;
-  return Math.max(1, Math.ceil(heavy / 2));
+  if (clampWeek(week) <= 3) return base;
+  return extraSets ? from4 : base;
 }
 
 export function isSlotHidden(slot: Pick<Slot, 'sets'>, week: number, extraSets = true): boolean {
@@ -167,11 +160,10 @@ export function formatRange(r: Range): string {
 /**
  * Target RIR shown on a card.
  * Week 1: listed + 1 ("0-1" -> "1-2"). Weeks 2-5: as listed.
- * Week 6: 1 for compounds, 0 for isolations. Week 7: about 4.
+ * Week 6: 1 for compounds, 0 for isolations.
  */
 export function targetRir(rir: string, kind: SlotKind, week: number): string {
   const w = clampWeek(week);
-  if (w === DELOAD_WEEK) return '~4';
   if (w === 6) return kind === 'compound' ? '1' : '0';
   const r = parseRange(rir);
   if (!r) return rir;
@@ -190,8 +182,7 @@ export function weekRule(week: number): WeekRule {
   if (w === 1) return { title: 'Impara gli esercizi', text: 'Lascia una ripetizione in più in riserva rispetto al RIR indicato.' };
   if (w <= 3) return { title: 'RIR indicato', text: 'Aggiungi ripetizioni, poi carico.' };
   if (w <= 5) return { title: 'Serie extra', text: 'Se recuperi bene, usa il secondo numero dove c’è la freccia (3 → 4, 0 → 3).' };
-  if (w === 6) return { title: 'Settimana più dura', text: 'Isolamenti a cedimento, multiarticolari a 1 RIR.' };
-  return { title: 'Scarico', text: 'Metà delle serie, stessi carichi, circa 4 RIR. Poi si riparte.' };
+  return { title: 'Settimana più dura', text: 'Isolamenti a cedimento, multiarticolari a 1 RIR.' };
 }
 
 /** The rules of the program sheet, translated, for the "Regole" sheet. */
@@ -205,7 +196,6 @@ export const PROGRAM_RULES: { title: string; text: string }[] = [
   { title: 'Settimane 2-3', text: 'RIR indicato. Aggiungi ripetizioni, poi carico.' },
   { title: 'Settimane 4-5', text: 'Se recuperi bene, passa al secondo numero dove la colonna Serie ha una freccia (3 → 4, 0 → 3): sono le serie extra per schiena, spalle, braccia e avambracci.' },
   { title: 'Settimana 6', text: 'La settimana più dura: isolamenti a cedimento, multiarticolari a 1 RIR.' },
-  { title: 'Settimana 7', text: 'Scarico: metà delle serie, stessi carichi, circa 4 RIR. Poi si ricomincia.' },
 ];
 
 /* ------------------------------------------------------------------ order and labels */
@@ -320,7 +310,7 @@ export function compareSets(a: Pick<SetLog, 'weightKg' | 'reps'>, b: Pick<SetLog
 }
 
 export interface ProgressionHint {
-  kind: 'load' | 'reps' | 'deload' | 'first';
+  kind: 'load' | 'reps' | 'first';
   weightKg: number | null;
   reps: number | null;
   text: string;
@@ -329,27 +319,14 @@ export interface ProgressionHint {
 /**
  * Never forced. If every working set of the last session reached the top of the
  * range: last load + one load step (start again at the bottom of the range).
- * Otherwise: one more rep than last time at the same load. Deload: same load.
+ * Otherwise: one more rep than last time at the same load.
  */
-export function progressionHint(
-  last: Performance | null,
-  range: Range,
-  loadStepKg: number,
-  week: number,
-): ProgressionHint {
+export function progressionHint(last: Performance | null, range: Range, loadStepKg: number): ProgressionHint {
   if (!last || last.sets.length === 0) {
     return { kind: 'first', weightKg: null, reps: range.min, text: `Prima volta: scegli un carico per ${range.min}-${range.max} rip.` };
   }
   const top = topSet(last.sets)!;
   const load = top.weightKg;
-  if (clampWeek(week) === DELOAD_WEEK) {
-    return {
-      kind: 'deload',
-      weightKg: load,
-      reps: top.reps,
-      text: load === null ? 'Scarico: stesso carico, circa 4 RIR' : `Scarico: ${formatKg(load)} kg, circa 4 RIR`,
-    };
-  }
   const allTop = last.sets.every((s) => (s.reps ?? 0) >= range.max);
   if (allTop && load !== null) {
     const next = roundToStep(load + loadStepKg, 0.5);

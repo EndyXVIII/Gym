@@ -141,12 +141,12 @@ async function startDay(page, title) {
 /* ------------------------------------------------------------------ 1. weeks and Monday */
 {
   const { context, page } = await newPage('2026-11-22T10:00:00+01:00');
-  ok('1a. Sunday 22 November shows week 1', await page.getByText('Settimana 1 di 7').isVisible());
+  ok('1a. Sunday 22 November shows week 1', await page.getByText('Settimana 1 di 6').isVisible());
   await context.close();
 }
 {
   const { context, page } = await newPage('2026-11-23T08:30:00+01:00');
-  ok('1b. Monday 23 November shows week 2', await page.getByText('Settimana 2 di 7').isVisible());
+  ok('1b. Monday 23 November shows week 2', await page.getByText('Settimana 2 di 6').isVisible());
   ok('1c. Monday offers Upper A', await page.getByRole('region', { name: /Allenamento di oggi: Upper A/ }).isVisible());
   await startDay(page, 'Upper A');
   const bench = await lastTimeOf(page, 'Bench press');
@@ -224,22 +224,110 @@ async function startDay(page, title) {
   await context.close();
 }
 
-/* ------------------------------------------------------------------ 4. week 7 and week 4 */
+/* ------------------------------------------------------------------ 4. a 6-week block, no deload, more serie from week 4 */
+const heroText = async (page, title) => (await page.getByRole('region', { name: new RegExp(`Allenamento di oggi: ${title}`) }).innerText()).replace(/\s+/g, ' ');
 {
-  const { context, page } = await newPage('2026-12-28T08:30:00+01:00');
-  ok('4b. Week 7 shows the Scarico badge', await page.getByText('Settimana 7 di 7').isVisible());
+  // Monday of week 3: serie as in the first weeks.
+  const { context, page } = await newPage('2026-11-30T08:30:00+01:00');
+  ok('4a. Week 3: Upper A has 7 exercises and 22 serie', /7 esercizi/.test(await heroText(page, 'Upper A')) && /22 serie/.test(await heroText(page, 'Upper A')), (await heroText(page, 'Upper A')).slice(0, 80));
   await startDay(page, 'Upper A');
-  const benchChips = await page.getByRole('article', { name: /^Bench press/ }).innerText();
-  const latChips = await page.getByRole('article', { name: /^Lat pulldown/ }).innerText();
-  ok('4c. Week 7: bench 3 -> 2 sets', benchChips.includes('2 × 6-10'), benchChips.split('\n').slice(0, 4).join(' / '));
-  ok('4d. Week 7: lat pulldown 4 -> 2 sets', latChips.includes('2 × 6-10'));
-  ok('4e. Week 7: RIR about 4', benchChips.includes('RIR ~4'));
+  ok('4a2. Week 3: overhead cable triceps still 4 serie', (await page.getByRole('article', { name: /^Overhead cable triceps/ }).innerText()).includes('4 × 8-12'));
   await context.close();
 }
 {
+  // Monday of week 4: +4 serie on Upper A, the new numbers on the exercises.
+  const { context, page } = await newPage('2026-12-07T08:30:00+01:00');
+  const hero = await heroText(page, 'Upper A');
+  ok('4b. Week 4: Upper A has 29 serie (was 25)', /7 esercizi/.test(hero) && /29 serie/.test(hero), hero.slice(0, 80));
+  await startDay(page, 'Upper A');
+  const chips = async (name) => (await page.getByRole('article', { name }).innerText()).replace(/\s+/g, ' ');
+  ok('4c. Week 4: overhead cable triceps 6 serie (was 4)', (await chips(/^Overhead cable triceps/)).includes('6 × 8-12'));
+  ok('4d. Week 4: cable lateral raise 5 serie, chest-supported row 4 serie', (await chips(/^Cable lateral raise/)).includes('5 × 10-15') && (await chips(/^Chest-supported row/)).includes('4 × 6-10'));
+  ok('4d2. Week 4: same reps, RIR and rest on the added serie', (await chips(/^Overhead cable triceps/)).includes('RIR 0-1') && (await chips(/^Overhead cable triceps/)).includes('Recupero 1:30'));
+  await context.close();
+}
+{
+  // Thursday of week 4: Upper B has 30 serie (was 26).
+  const { context, page } = await newPage('2026-12-10T08:30:00+01:00');
+  const hero = await heroText(page, 'Upper B');
+  ok('4e. Week 4: Upper B has 30 serie (was 26)', /8 esercizi/.test(hero) && /30 serie/.test(hero), hero.slice(0, 80));
+  await context.close();
+}
+{
+  // Tuesday of week 4: the lower days are as before.
   const { context, page } = await newPage('2026-12-08T18:00:00+01:00');
+  ok('4f1. Week 4: Lower A still 9 exercises and 29 serie', /9 esercizi/.test(await heroText(page, 'Lower A')) && /29 serie/.test(await heroText(page, 'Lower A')));
   await startDay(page, 'Lower A');
   ok('4f. Week 4: Wrist extension appears with 3 sets', (await page.getByRole('article', { name: /^Wrist extension/ }).innerText()).includes('3 × 10-15'));
+  await context.close();
+}
+{
+  // Week 6 is the last one: no deload badge, no half sets, RIR as for week 6.
+  const { context, page } = await newPage('2026-12-21T08:30:00+01:00');
+  ok('4g. Monday 21 December is "Settimana 6 di 6"', await page.getByText('Settimana 6 di 6').isVisible());
+  const body = (await page.locator('body').innerText()).toLowerCase();
+  ok('4h. No "scarico" anywhere in week 6', !body.includes('scarico'));
+  await startDay(page, 'Upper A');
+  const bench = (await page.getByRole('article', { name: /^Bench press/ }).innerText()).replace(/\s+/g, ' ');
+  const lat = (await page.getByRole('article', { name: /^Lat pulldown/ }).innerText()).replace(/\s+/g, ' ');
+  ok('4i. Week 6: bench 3 serie at RIR 1, lat pulldown 4 serie', bench.includes('3 × 6-10') && bench.includes('RIR 1') && lat.includes('4 × 6-10'), `${bench.slice(0, 60)} | ${lat.slice(0, 60)}`);
+  await context.close();
+}
+{
+  // After week 6 the block is complete.
+  const { context, page } = await newPage('2026-12-28T08:30:00+01:00');
+  ok('4j. After week 6: the card "Blocco completato" is there', await page.getByRole('region', { name: 'Blocco completato' }).isVisible());
+  ok('4k. It says 6 settimane fatte', (await page.getByRole('region', { name: 'Blocco completato' }).innerText()).toLowerCase().includes('6 settimane fatte'));
+  ok('4l. Progress shows week 6 of 6, no week 7', await page.getByText('Settimana 6 di 6').isVisible() && !(await page.locator('body').innerText()).includes('Settimana 7'));
+  await page.getByRole('button', { name: 'Inizia un nuovo blocco' }).click();
+  await page.waitForTimeout(600);
+  ok('4m. "Inizia un nuovo blocco" starts again from week 1', await page.getByText('Settimana 1 di 6').isVisible());
+  await context.close();
+}
+{
+  // The grid and the muscle tab have 6 weeks.
+  const { context, page } = await newPage('2026-11-24T09:00:00+01:00');
+  await page.goto(`${BASE}/storico`, { waitUntil: 'networkidle' });
+  await page.getByRole('radio', { name: 'Griglia' }).click();
+  const headers = (await page.locator('table').first().locator('thead th').allInnerTexts()).map((t) => t.trim());
+  ok('4n. The history grid has 6 week columns (Sett. 1-6)', headers.length === 7 && headers[6] === 'Sett. 6' && !headers.join(' ').includes('Scarico'), headers.join(' | '));
+  await page.getByRole('radio', { name: 'Muscoli' }).click();
+  await page.getByRole('radiogroup', { name: 'Settimana' }).waitFor();
+  const chipsCount = await page.getByRole('radiogroup', { name: 'Settimana' }).getByRole('radio').count();
+  ok('4o. The muscle tab has 6 week buttons', chipsCount === 6, String(chipsCount));
+  await page.goto(`${BASE}/impostazioni`, { waitUntil: 'networkidle' });
+  const opts = await page.getByLabel('Settimana corrente').locator('option').allInnerTexts();
+  ok('4p. Settings: automatic + weeks 1-6, no week 7', opts.length === 7 && !opts.join(' ').includes('7') && (await page.locator('main').innerText()).toLowerCase().includes('blocco di 6 settimane'), opts.join(' | '));
+  await context.close();
+}
+{
+  // A device that already has the program (old sets, migration not done yet) gets the new numbers.
+  const { context, page } = await newPage('2026-12-07T08:30:00+01:00');
+  await page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('scheda');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction(['slots', 'meta'], 'readwrite');
+          const store = tx.objectStore('slots');
+          store.getAll().onsuccess = (e) => {
+            for (const s of e.target.result) {
+              if (s.exerciseKey === 'overhead-cable-triceps-extension') store.put({ ...s, sets: [4, 4] });
+              if (s.exerciseKey === 'chest-supported-row') store.put({ ...s, sets: [3, 3] });
+            }
+          };
+          tx.objectStore('meta').delete('migrations');
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+  );
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const hero = await heroText(page, 'Upper A');
+  ok('4q. An old device is updated at start: Upper A has 29 serie in week 4', /29 serie/.test(hero), hero.slice(0, 80));
   await context.close();
 }
 

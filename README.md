@@ -3,7 +3,7 @@
 A private workout tracker for one person: my upper/lower program, the weights I lift, session after session.
 Mobile-first installable web app (PWA), Italian UI, offline-first, synced to my own Supabase project.
 
-- **Oggi**: this week (Settimana *n* di 7, deload in week 7), today's workout, rest days, sessions done this week, resume.
+- **Oggi**: this week (Settimana *n* di 6), today's workout, rest days, sessions done this week, resume.
 - **Sessione**: one card per exercise with picture, "Ultima volta" from the most recent log of that exercise on any day, progression hint, set rows (weight − / +, reps, one tap to check), warm-ups, skip, "Sostituisci per oggi", undo, rest timer (every exercise has its own), screen kept awake. A finished exercise folds up and the next one is highlighted. At the end: a summary with totals, records and the **body map of the muscles trained** (this workout or the whole week so far).
 - **Programma**: days, weekdays, exercises with pictures, sets/reps/RIR/rest/notes, drag to reorder, swap exercises (history kept). No supersets: every exercise is done on its own, numbered 1..n.
 - **Storico**: the Excel-like grid (weeks 1-7, top set per cell, a green arrow when you improved, tap to edit), history by exercise (search, muscle filter, best set, sparkline, PR badges), **Muscoli** (pick week 1-7 and see which muscles were hit on the body map, with serie per muscle, the change against the week before and the muscles not trained), session list.
@@ -34,7 +34,7 @@ npm test
 npm run build && npm run preview
 ```
 
-`npm test` runs the unit tests (week logic, sets/RIR by week, deload, hidden slots, progression hint,
+`npm test` runs the unit tests (week logic, sets/RIR by week, hidden slots, progression hint,
 "Ultima volta" across days, seed import, program editor, export/import, sync with last-write-wins).
 `e2e/acceptance.mjs` runs the acceptance checks of the spec in Chromium at 390 × 844 against a
 production build with a fake Supabase in memory (needs Playwright; see the comment at the top of the file).
@@ -104,6 +104,22 @@ Tips: the rest-timer beep follows the ring/silent switch (it mixes with your mus
 - Seed records (program + week 1) have deterministic ids (UUID v5 of keys like `slot:upper-a:6a`) and an old timestamp: importing the seed on a second device creates no duplicates and never overwrites real edits.
 - Photos/videos: shrunk to 1200 px, stored in IndexedDB and in the private `media` bucket under your user id.
 - History belongs to the exercise, not to the slot: "Ultima volta" and the history come from the latest log of that exercise on any day.
+
+## The program
+
+- The block is **6 weeks**. Weeks 1-3 use the first number of `sets`, weeks 4-6 the second one (the "serie extra", shown with an arrow, e.g. 3 → 5). Week 1 leaves one more rep in reserve, week 6 is the hardest (isolations to failure, compounds at 1 RIR). There is no deload week: after week 6 the Oggi screen shows "Blocco completato" and "Inizia un nuovo blocco".
+- The program lives in `src/data/seed.json`. A change to it reaches a phone that already has the program through a migration in `src/lib/migrations.ts` (it only touches slots that still have the old numbers).
+- Direct serie per muscle (primary muscles; an exercise with two primary muscles counts for both), per day and per week:
+
+```bash
+npm run sets
+```
+
+  To compare with an earlier version of the program and check the rules of a change:
+
+```bash
+git show HEAD:src/data/seed.json > /tmp/before.json && node scripts/count-direct-sets.mjs --before /tmp/before.json
+```
 
 ## Muscle map
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { v5 as uuidv5 } from 'uuid';
 import {
+  BLOCK_WEEKS,
   calendarWeek,
   dateInBlock,
   dayPlanSummary,
@@ -11,6 +12,7 @@ import {
   normalizeOrder,
   performanceLabel,
   personalRecords,
+  PROGRAM_RULES,
   prefillFor,
   progressionHint,
   setsForWeek,
@@ -72,14 +74,19 @@ describe('weeks', () => {
     expect(weekInfo(settings, '2026-11-23').week).toBe(2);
   });
 
-  it('week 7 is the deload, after it the block is completed', () => {
-    const w7 = weekInfo(settings, '2026-12-28');
-    expect(w7.week).toBe(7);
-    expect(w7.isDeload).toBe(true);
-    expect(w7.completed).toBe(false);
-    const after = weekInfo(settings, '2027-01-04');
-    expect(after.completed).toBe(true);
-    expect(after.week).toBe(7);
+  it('the block is 6 weeks: week 6 is the last one, after it the block is completed', () => {
+    expect(BLOCK_WEEKS).toBe(6);
+    const w6 = weekInfo(settings, '2026-12-27'); // Sunday of week 6
+    expect([w6.week, w6.completed]).toEqual([6, false]);
+    const monday = weekInfo(settings, '2026-12-28'); // the Monday that used to be week 7
+    expect([monday.week, monday.calendar, monday.completed]).toEqual([6, 7, true]);
+    const later = weekInfo(settings, '2027-01-04');
+    expect([later.week, later.completed]).toEqual([6, true]);
+  });
+
+  it('there is no week 7 any more: an override of 7 is ignored', () => {
+    const w = weekInfo({ blockStartDate: '2026-11-16', weekOverride: 7 }, '2026-11-23');
+    expect([w.week, w.overridden]).toEqual([2, false]);
   });
 
   it('the settings override the calendar week', () => {
@@ -104,12 +111,15 @@ describe('weeks', () => {
   it('dates in the block follow the weekday', () => {
     expect(dateInBlock('2026-11-16', 1, 1)).toBe('2026-11-16');
     expect(dateInBlock('2026-11-16', 2, 2)).toBe('2026-11-24');
-    expect(dateInBlock('2026-11-16', 7, 5)).toBe('2027-01-01');
+    expect(dateInBlock('2026-11-16', 6, 5)).toBe('2026-12-25');
   });
 
-  it('has a rule line for every week', () => {
-    for (let w = 1; w <= 7; w++) expect(weekRule(w).text.length).toBeGreaterThan(10);
-    expect(weekRule(7).title).toBe('Scarico');
+  it('has a rule line for every week, and no word about a deload', () => {
+    for (let w = 1; w <= BLOCK_WEEKS; w++) expect(weekRule(w).text.length).toBeGreaterThan(10);
+    expect(weekRule(6).title).toBe('Settimana più dura');
+    const all = JSON.stringify([...PROGRAM_RULES, ...Array.from({ length: 8 }, (_, i) => weekRule(i + 1))]).toLowerCase();
+    expect(all).not.toMatch(/scarico|deload|settimana 7|dimezz|4 rir/);
+    expect(PROGRAM_RULES.map((r) => r.title)).toEqual(['Intensità', 'Progressione', 'Recupero', 'Riscaldamento', 'Range di ripetizioni', 'Settimana 1', 'Settimane 2-3', 'Settimane 4-5', 'Settimana 6']);
   });
 });
 
@@ -123,32 +133,37 @@ describe('sets by week', () => {
     for (const w of [4, 5, 6]) expect(setsForWeek([3, 4], w, false)).toBe(3);
   });
 
-  it('week 7 is half of the weeks 4-6 number, rounded up, minimum 1', () => {
-    expect(setsForWeek([3, 4], 7)).toBe(2);
-    expect(setsForWeek([3, 3], 7)).toBe(2);
-    expect(setsForWeek([4, 4], 7)).toBe(2);
-    expect(setsForWeek([2, 2], 7)).toBe(1);
-    expect(setsForWeek([1, 1], 7)).toBe(1);
-    expect(setsForWeek([3, 5], 7)).toBe(3);
-    expect(setsForWeek([3, 4], 7, false)).toBe(2);
+  it('there is no deload: sets are never halved, and a week past the block keeps the week 6 sets', () => {
+    expect(setsForWeek([3, 4], 6)).toBe(4);
+    expect(setsForWeek([3, 4], 7)).toBe(4);
+    expect(setsForWeek([2, 2], 7)).toBe(2);
+    expect(setsForWeek([1, 1], 6)).toBe(1);
+    expect(setsForWeek([3, 4], 7, false)).toBe(3);
   });
 
   it('a [0, 3] slot is hidden in weeks 1-3 and appears from week 4', () => {
     for (const w of [1, 2, 3]) expect(isSlotHidden({ sets: [0, 3] }, w)).toBe(true);
     for (const w of [4, 5, 6]) expect(setsForWeek([0, 3], w)).toBe(3);
-    expect(setsForWeek([0, 3], 7)).toBe(2);
     expect(isSlotHidden({ sets: [0, 3] }, 5, false)).toBe(true);
-    expect(isSlotHidden({ sets: [0, 3] }, 7, false)).toBe(true);
+    expect(isSlotHidden({ sets: [0, 3] }, 6, false)).toBe(true);
   });
 
-  it('counts exercises and sets of Upper A per week', () => {
-    const upperA = seed.slots.filter((s) => s.dayKey === 'upper-a');
-    expect(dayPlanSummary(upperA, 2, true)).toEqual({ exercises: 7, sets: 22 });
-    expect(dayPlanSummary(upperA, 4, true)).toEqual({ exercises: 7, sets: 25 });
-    expect(dayPlanSummary(upperA, 7, true)).toEqual({ exercises: 7, sets: 14 });
-    const lowerA = seed.slots.filter((s) => s.dayKey === 'lower-a');
-    expect(dayPlanSummary(lowerA, 2, true).exercises).toBe(8);
-    expect(dayPlanSummary(lowerA, 4, true).exercises).toBe(9);
+  it('counts exercises and sets of every day per week', () => {
+    const day = (key: string) => seed.slots.filter((x) => x.dayKey === key);
+    // weeks 1-3
+    expect(dayPlanSummary(day('upper-a'), 2, true)).toEqual({ exercises: 7, sets: 22 });
+    expect(dayPlanSummary(day('lower-a'), 2, true)).toEqual({ exercises: 8, sets: 26 });
+    expect(dayPlanSummary(day('upper-b'), 2, true)).toEqual({ exercises: 8, sets: 24 });
+    expect(dayPlanSummary(day('lower-b'), 2, true)).toEqual({ exercises: 8, sets: 25 });
+    // weeks 4-6: +4 sets on each upper day, the lower days as before
+    for (const w of [4, 5, 6]) {
+      expect(dayPlanSummary(day('upper-a'), w, true)).toEqual({ exercises: 7, sets: 29 });
+      expect(dayPlanSummary(day('lower-a'), w, true)).toEqual({ exercises: 9, sets: 29 });
+      expect(dayPlanSummary(day('upper-b'), w, true)).toEqual({ exercises: 8, sets: 30 });
+      expect(dayPlanSummary(day('lower-b'), w, true)).toEqual({ exercises: 9, sets: 28 });
+    }
+    // "serie extra" off: the first numbers everywhere
+    expect(dayPlanSummary(day('upper-a'), 5, false).sets).toBe(22);
   });
 });
 
@@ -173,9 +188,11 @@ describe('RIR by week', () => {
     expect(targetRir('1', 'isolation', 6)).toBe('0');
   });
 
-  it('week 7: about 4', () => {
-    expect(targetRir('1-2', 'compound', 7)).toBe('~4');
-    expect(targetRir('0', 'isolation', 7)).toBe('~4');
+  it('there is no "about 4" RIR any more', () => {
+    for (let w = 1; w <= 8; w++) {
+      expect(targetRir('1-2', 'compound', w)).not.toBe('~4');
+      expect(targetRir('0', 'isolation', w)).not.toBe('~4');
+    }
   });
 });
 
@@ -183,7 +200,7 @@ describe('progression hint', () => {
   const s1 = session('s1', '2026-11-23');
   it('adds one load step when every working set hit the top of the range', () => {
     const last = { session: s1, sets: [1, 2, 3].map((i) => log({ id: `l${i}`, sessionId: 's1', exerciseKey: 'x', setIndex: i, weightKg: 70, reps: 10 })) };
-    const hint = progressionHint(last, { min: 6, max: 10 }, 2.5, 2);
+    const hint = progressionHint(last, { min: 6, max: 10 }, 2.5);
     expect(hint.kind).toBe('load');
     expect(hint.weightKg).toBe(72.5);
     expect(hint.reps).toBe(6);
@@ -194,7 +211,7 @@ describe('progression hint', () => {
       session: s1,
       sets: [log({ id: 'a', sessionId: 's1', exerciseKey: 'x', weightKg: 70, reps: 10 }), log({ id: 'b', sessionId: 's1', exerciseKey: 'x', setIndex: 1, weightKg: 70, reps: 8 })],
     };
-    const hint = progressionHint(last, { min: 6, max: 10 }, 2.5, 3);
+    const hint = progressionHint(last, { min: 6, max: 10 }, 2.5);
     expect(hint.kind).toBe('reps');
     expect(hint.weightKg).toBe(70);
     expect(hint.reps).toBe(11);
@@ -202,18 +219,13 @@ describe('progression hint', () => {
 
   it('works on the week 1 summaries: bench 20 x 10 -> 22.5, lat pulldown 70 x 6 -> 70 x 7', () => {
     const bench = lastPerformance('bench-press', seed.setLogs, sessionsById)!;
-    expect(progressionHint(bench, { min: 6, max: 10 }, 2.5, 2)).toMatchObject({ kind: 'load', weightKg: 22.5 });
+    expect(progressionHint(bench, { min: 6, max: 10 }, 2.5)).toMatchObject({ kind: 'load', weightKg: 22.5 });
     const lat = lastPerformance('lat-pulldown', seed.setLogs, sessionsById)!;
-    expect(progressionHint(lat, { min: 6, max: 10 }, 2.5, 2)).toMatchObject({ kind: 'reps', weightKg: 70, reps: 7 });
-  });
-
-  it('keeps the load in the deload week', () => {
-    const lat = lastPerformance('lat-pulldown', seed.setLogs, sessionsById)!;
-    expect(progressionHint(lat, { min: 6, max: 10 }, 2.5, 7)).toMatchObject({ kind: 'deload', weightKg: 70 });
+    expect(progressionHint(lat, { min: 6, max: 10 }, 2.5)).toMatchObject({ kind: 'reps', weightKg: 70, reps: 7 });
   });
 
   it('first time: no history', () => {
-    expect(progressionHint(null, { min: 8, max: 12 }, 2.5, 2).kind).toBe('first');
+    expect(progressionHint(null, { min: 8, max: 12 }, 2.5).kind).toBe('first');
   });
 });
 

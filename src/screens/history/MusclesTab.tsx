@@ -6,7 +6,7 @@ import { useSettings } from '../../app/SettingsContext';
 import { useToday } from '../../lib/hooks';
 import { loadWeekMuscles } from '../../lib/muscleQueries';
 import { FULL_AT_SESSION, FULL_AT_WEEK } from '../../lib/muscleStats';
-import { BLOCK_WEEKS, DELOAD_WEEK, isoWeekday, weekInfo } from '../../lib/program';
+import { BLOCK_WEEKS, isoWeekday, weekInfo } from '../../lib/program';
 import { capitalize, formatDateShort, formatDateWithYear, WEEKDAYS_SHORT_IT } from '../../lib/format';
 import { accentStyle, Button, Card, cx, EmptyState, Skeleton } from '../../components/ui';
 import { MuscleReport } from '../../components/MuscleReport';
@@ -60,7 +60,7 @@ export function MusclesTab() {
         </label>
       )}
 
-      <div role="radiogroup" aria-label="Settimana" className="grid grid-cols-7 gap-1.5">
+      <div role="radiogroup" aria-label="Settimana" className="grid grid-cols-6 gap-1.5">
         {Array.from({ length: BLOCK_WEEKS }, (_, i) => i + 1).map((n) => {
           const on = n === week;
           const has = data.weeksWithData.includes(n);
@@ -71,7 +71,7 @@ export function MusclesTab() {
               type="button"
               role="radio"
               aria-checked={on}
-              aria-label={`Settimana ${n}${n === DELOAD_WEEK ? ' (scarico)' : ''}${has ? '' : ', nessun allenamento'}${now ? ', questa settimana' : ''}`}
+              aria-label={`Settimana ${n}${has ? '' : ', nessun allenamento'}${now ? ', questa settimana' : ''}`}
               onClick={() => {
                 setWeek(n);
                 setOnly(null);
@@ -84,17 +84,13 @@ export function MusclesTab() {
             >
               {n}
               <span className={cx('mt-0.5 h-1.5 w-1.5 rounded-full', has ? (on ? 'bg-on-accent' : 'bg-[var(--heat-3)]') : 'bg-transparent')} aria-hidden />
-              {n === DELOAD_WEEK && <span className={cx('sr-only')}>scarico</span>}
             </button>
           );
         })}
       </div>
 
       <div>
-        <h2 className="text-[22px] font-extrabold tnum">
-          Settimana {week}
-          {week === DELOAD_WEEK && <span className="ml-2 text-[14px] font-bold text-warm-ink">scarico</span>}
-        </h2>
+        <h2 className="text-[22px] font-extrabold tnum">Settimana {week}</h2>
         <p className="text-[14px] text-muted tnum">
           {formatDateShort(data.from)} – {formatDateShort(data.to)} · {data.sessions.length === 1 ? '1 allenamento' : `${data.sessions.length} allenamenti`} · {data.sets} serie
         </p>

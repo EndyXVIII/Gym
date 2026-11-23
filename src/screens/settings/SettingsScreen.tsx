@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CalendarRange, Database, Dumbbell, Download, ExternalLink, FileSpreadsheet, Info, Palette, Settings2, Upload, UserRound, Volume2 } from 'lucide-react';
 import { useSettings } from '../../app/SettingsContext';
 import { updateSettings, startNewBlock } from '../../lib/settingsOps';
-import { weekInfo } from '../../lib/program';
+import { BLOCK_WEEKS, weekInfo } from '../../lib/program';
 import { useToday } from '../../lib/hooks';
 import { backupFileName, buildCsv, buildExport, importBackup, ImportError, saveFile } from '../../lib/exportImport';
 import { softBeep, unlockAudio } from '../../lib/feedback';
@@ -69,7 +69,7 @@ export default function SettingsScreen() {
           </Row>
         </Section>
 
-        <Section title="Blocco di 7 settimane" icon={<CalendarRange size={16} />} tone="pink">
+        <Section title={`Blocco di ${BLOCK_WEEKS} settimane`} icon={<CalendarRange size={16} />} tone="pink">
           <Row>
             <label className="block">
               <span className="mb-1.5 block text-[13px] font-medium text-muted">Inizio del blocco (lunedì)</span>
@@ -90,11 +90,10 @@ export default function SettingsScreen() {
                 value={settings.weekOverride ?? ''}
                 onChange={(e) => void updateSettings({ weekOverride: e.target.value ? Number(e.target.value) : null })}
               >
-                <option value="">Automatica: settimana {Math.min(7, Math.max(1, w.calendar))}</option>
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                <option value="">Automatica: settimana {Math.min(BLOCK_WEEKS, Math.max(1, w.calendar))}</option>
+                {Array.from({ length: BLOCK_WEEKS }, (_, i) => i + 1).map((n) => (
                   <option key={n} value={n}>
                     Settimana {n}
-                    {n === 7 ? ' (scarico)' : ''}
                   </option>
                 ))}
               </select>
