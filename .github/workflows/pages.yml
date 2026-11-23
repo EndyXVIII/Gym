@@ -1,0 +1,59 @@
+# Builds Scheda and publishes it on GitHub Pages: https://<user>.github.io/<repo>/
+# One-time setup (see README): Settings > Pages > Source: GitHub Actions,
+# and Settings > Secrets and variables > Actions: variable VITE_SUPABASE_URL,
+# secret VITE_SUPABASE_ANON_KEY. Without them the app is built local-only.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, claude/brave-rubin-4lh2n9]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # The site lives under /<repo>/. Set the variable BASE_PATH to "/" for a custom domain.
+          BASE_PATH: ${{ vars.BASE_PATH || format('/{0}/', github.event.repository.name) }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY }}
+
+      # Pages has no rewrites: serve the app for direct links like /<repo>/storico too.
+      - run: cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

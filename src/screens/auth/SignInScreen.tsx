@@ -219,7 +219,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col px-6 pt-safe pb-[max(env(safe-area-inset-bottom),24px)]">
       <div className="mt-[12vh]">
-        <img src="/icons/icon-192.png" alt="" width={64} height={64} className="rounded-[16px]" />
+        <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" width={64} height={64} className="rounded-[16px]" />
         <h1 className="mt-5 text-[32px] leading-tight font-bold tracking-tight">Accedi a Scheda</h1>
       </div>
       <div className="mt-3">{children}</div>

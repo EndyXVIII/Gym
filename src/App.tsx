@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Route, Switch, useLocation } from 'wouter';
+import { Route, Router, Switch, useLocation } from 'wouter';
 import { ensureSeeded, requestPersistentStorage } from './lib/bootstrap';
 import { installAudioUnlock } from './lib/feedback';
 import { SettingsProvider } from './app/SettingsContext';
@@ -18,6 +18,9 @@ const HistoryScreen = lazy(() => import('./screens/history/HistoryScreen'));
 const ExerciseHistoryScreen = lazy(() => import('./screens/history/ExerciseHistoryScreen'));
 const SettingsScreen = lazy(() => import('./screens/settings/SettingsScreen'));
 const SignInScreen = lazy(() => import('./screens/auth/SignInScreen'));
+
+/** "" at the root (Vercel, Netlify), "/Gym" on GitHub Pages. */
+const ROUTER_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -49,7 +52,9 @@ export default function App() {
   if (!ready) return <ScreenSkeleton />;
   return (
     <SettingsProvider>
-      <Shell />
+      <Router base={ROUTER_BASE}>
+        <Shell />
+      </Router>
     </SettingsProvider>
   );
 }

@@ -67,6 +67,24 @@ Your email address is not in the code and not needed as a setting: Supabase only
 `vercel.json` adds the SPA rewrite, a strict Content-Security-Policy (only this site and `*.supabase.co`), `noindex`, and the cache headers the service worker needs. If you use a custom Supabase domain, add it to `connect-src` there.
 Netlify works the same way with `netlify.toml` (same build, same variables).
 
+## 2b. Or: deploy on GitHub Pages
+
+Free for public repositories. The site will be at `https://<your-user>.github.io/Gym/`. The workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) runs the tests, builds with the base path `/Gym/`, adds a `404.html` copy of the app for direct links, and publishes.
+
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+2. **Settings → Secrets and variables → Actions**:
+   - tab **Variables** → New repository variable `VITE_SUPABASE_URL` = the Project URL;
+   - tab **Secrets** → New repository secret `VITE_SUPABASE_ANON_KEY` = the anon / publishable key.
+3. **Actions → Deploy to GitHub Pages → Run workflow** (afterwards it runs by itself on every push to `main` or to the work branch). When it's green, the URL is on the run page and in **Settings → Pages**.
+4. In Supabase, set **Authentication → URL Configuration → Site URL** to that URL (optional).
+5. On the iPhone, follow section 3 with the Pages URL (`…/Gym/`, with the final slash).
+
+Differences from Vercel, all minor for this app:
+- Pages can't send headers, so the Content-Security-Policy comes as a `<meta>` tag (production builds always include it, with only this site and your Supabase project in `connect-src`); there is no `X-Frame-Options`.
+- Pages has no rewrites: opening a deep link like `…/Gym/storico` in a fresh browser gets a 404 status with the app in it (it still works). The installed app starts at `…/Gym/` and its service worker answers every link itself.
+- All your GitHub Pages sites share the origin `<your-user>.github.io`, so they share browser storage. Fine if the other sites are yours; if you publish third-party code on Pages, prefer Vercel (its own origin) for Scheda.
+- For a custom domain, add the repository variable `BASE_PATH` = `/`.
+
 ## 3. Put it on the iPhone home screen
 
 1. On the iPhone, open the Vercel URL in **Safari**.
