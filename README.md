@@ -13,6 +13,8 @@ React 19 + TypeScript + Vite + Tailwind CSS 4, Lucide icons, Dexie (IndexedDB) o
 
 ## Run it locally
 
+Needs **Node.js 22.12 or newer** (Vite 8). Check with `node -v`; `.nvmrc` pins 22 for nvm, and `.npmrc` makes `npm install` stop with a clear message on an older Node.
+
 ```bash
 npm install
 ```
