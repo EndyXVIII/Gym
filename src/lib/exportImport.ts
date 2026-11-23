@@ -1,5 +1,6 @@
 /** Backup: JSON export/import (merge, last write wins) and a CSV of every set for Excel. */
 import { db, SYNCED_TABLES } from './db';
+import { runMigrations } from './migrations';
 import { notifyLocalChange } from './repo';
 import { displayReps } from './program';
 import type { SyncFields, SyncedTable } from './types';
@@ -67,7 +68,10 @@ export async function importBackup(text: string): Promise<ImportResult> {
     });
     if (toPut.length) await table.bulkPut(toPut);
   }
-  if (result.added || result.updated) notifyLocalChange();
+  if (result.added || result.updated) {
+    await runMigrations(); // an old backup may still have supersets
+    notifyLocalChange();
+  }
   return result;
 }
 

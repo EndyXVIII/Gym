@@ -4,16 +4,17 @@ import { useLocation } from 'wouter';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronLeft, ChevronRight, GripVertical, Link2, Plus, Settings2, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, GripVertical, Plus, Settings2, Trash2 } from 'lucide-react';
 import { useSettings } from '../../app/SettingsContext';
-import { loadProgram } from '../../lib/queries';
+import { loadExerciseMap, loadProgram } from '../../lib/queries';
 import { addDay, addSlot, addSlotWithNewExercise, deleteDay, moveDay, reorderSlots, updateDay } from '../../lib/programOps';
 import { formatSetsColumn, setsForWeek, weekInfo } from '../../lib/program';
 import { formatRest, plural, WEEKDAYS_IT, capitalize } from '../../lib/format';
 import { useToday } from '../../lib/hooks';
 import { db } from '../../lib/db';
-import type { Day, Slot } from '../../lib/types';
-import { accentStyle, Button, Card, cx, EmptyState, Field, inputClass, ScreenHeader, Segmented, ScreenSkeleton } from '../../components/ui';
+import type { Day, Exercise, Slot } from '../../lib/types';
+import { accentStyle, Button, cx, EmptyState, Field, IconTile, inputClass, ScreenHeader, Segmented, ScreenSkeleton } from '../../components/ui';
+import { ExerciseThumb } from '../../components/ExerciseThumb';
 import { ConfirmSheet, Sheet } from '../../components/Sheet';
 import { ExercisePicker } from '../../components/ExercisePicker';
 import { SyncDot } from '../../components/SyncDot';
@@ -23,6 +24,7 @@ import { SlotEditorSheet } from './SlotEditorSheet';
 
 export default function ProgramScreen({ dayKey }: { dayKey?: string }) {
   const data = useLiveQuery(loadProgram, []);
+  const exercises = useLiveQuery(() => loadExerciseMap(), []);
   const [, navigate] = useLocation();
   const settings = useSettings();
   const today = useToday();
@@ -33,7 +35,16 @@ export default function ProgramScreen({ dayKey }: { dayKey?: string }) {
 
   return (
     <div>
-      <ScreenHeader title="Programma" right={<SyncDot className="p-2" />} />
+      <ScreenHeader
+        title="Programma"
+        subtitle="La tua scheda"
+        icon={
+          <IconTile tone="amber" size={48} round>
+            <ClipboardList size={24} />
+          </IconTile>
+        }
+        right={<SyncDot className="p-2" />}
+      />
       <nav aria-label="Giorni" className="scrollbar-none -mb-1 flex gap-2 overflow-x-auto px-4 pb-1">
         {data.days.map((d) => (
           <button
@@ -43,8 +54,8 @@ export default function ProgramScreen({ dayKey }: { dayKey?: string }) {
             aria-current={d.id === day?.id ? 'page' : undefined}
             onClick={() => navigate(`/programma/${encodeURIComponent(d.key)}`, { replace: true })}
             className={cx(
-              'pressable flex h-12 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-semibold whitespace-nowrap',
-              d.id === day?.id ? 'border-transparent bg-accent text-on-accent' : 'border-line bg-surface text-ink',
+              'pressable flex h-12 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-bold whitespace-nowrap',
+              d.id === day?.id ? 'grad-accent glow-accent border-transparent text-on-accent' : 'card-surface text-ink',
             )}
           >
             {d.id !== day?.id && <span className="h-2 w-2 rounded-full bg-accent" aria-hidden />}
@@ -66,7 +77,7 @@ export default function ProgramScreen({ dayKey }: { dayKey?: string }) {
 
       <div className="mt-4 px-4">
         {day ? (
-          <DayEditor key={day.id} day={day} slots={data.slotsByDay.get(day.key) ?? []} week={week} isFirst={data.days[0]?.id === day.id} isLast={data.days.at(-1)?.id === day.id} onDeleted={() => navigate('/programma', { replace: true })} />
+          <DayEditor key={day.id} day={day} slots={data.slotsByDay.get(day.key) ?? []} exercises={exercises} week={week} isFirst={data.days[0]?.id === day.id} isLast={data.days.at(-1)?.id === day.id} onDeleted={() => navigate('/programma', { replace: true })} />
         ) : (
           <EmptyState title="Nessun giorno" text="Aggiungi il primo giorno della scheda." action={<Button variant="primary" onClick={() => void addDay()}>Aggiungi un giorno</Button>} />
         )}
@@ -75,7 +86,7 @@ export default function ProgramScreen({ dayKey }: { dayKey?: string }) {
   );
 }
 
-function DayEditor({ day, slots, week, isFirst, isLast, onDeleted }: { day: Day; slots: Slot[]; week: number; isFirst: boolean; isLast: boolean; onDeleted: () => void }) {
+function DayEditor({ day, slots, exercises, week, isFirst, isLast, onDeleted }: { day: Day; slots: Slot[]; exercises: Map<string, Exercise> | undefined; week: number; isFirst: boolean; isLast: boolean; onDeleted: () => void }) {
   const settings = useSettings();
   const [order, setOrder] = useState(() => slots.map((s) => s.id));
   const [editing, setEditing] = useState<string | null>(null);
@@ -99,12 +110,13 @@ function DayEditor({ day, slots, week, isFirst, isLast, onDeleted }: { day: Day;
 
   return (
     <div style={accentStyle(day.type)} className="flex flex-col gap-3">
-      <Card className="p-4">
+      <section className="hero rounded-[26px] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="truncate text-[22px] font-bold">{day.title}</h2>
+            <p className="eyebrow text-accent-ink">{day.type === 'upper' ? 'Parte alta' : 'Parte bassa'}</p>
+            <h2 className="truncate text-[30px] leading-tight font-extrabold">{day.title}</h2>
             <p className="mt-0.5 text-[14px] text-muted tnum">
-              {day.weekday ? capitalize(WEEKDAYS_IT[day.weekday - 1]) : 'Nessun giorno fisso'} · {day.type === 'upper' ? 'parte alta' : 'parte bassa'} · ~{day.estimatedMinutes} min
+              {day.weekday ? capitalize(WEEKDAYS_IT[day.weekday - 1]) : 'Nessun giorno fisso'} · ~{day.estimatedMinutes} min
             </p>
             <p className="mt-0.5 text-[14px] text-muted tnum">
               Settimana {week}: {plural(slots.filter((s) => setsForWeek(s.sets, week, settings.extraSets) > 0).length, 'esercizio', 'esercizi')}, {totalSets} serie
@@ -114,7 +126,7 @@ function DayEditor({ day, slots, week, isFirst, isLast, onDeleted }: { day: Day;
             Giorno
           </Button>
         </div>
-      </Card>
+      </section>
 
       {ordered.length === 0 ? (
         <EmptyState title="Nessun esercizio" text="Aggiungi il primo esercizio di questo giorno." />
@@ -122,11 +134,9 @@ function DayEditor({ day, slots, week, isFirst, isLast, onDeleted }: { day: Day;
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={order} strategy={verticalListSortingStrategy}>
             <ol className="flex flex-col gap-2" aria-label={`Esercizi di ${day.title}`}>
-              {ordered.map((s, i) => {
-                const prev = ordered[i - 1];
-                const linked = !!s.superset && prev?.superset?.group === s.superset.group;
-                return <SortableSlot key={s.id} slot={s} week={week} linkedToPrev={linked} onOpen={() => setEditing(s.id)} />;
-              })}
+              {ordered.map((s) => (
+                <SortableSlot key={s.id} slot={s} exercise={exercises?.get(s.exerciseKey)} week={week} onOpen={() => setEditing(s.id)} />
+              ))}
             </ol>
           </SortableContext>
         </DndContext>
@@ -184,44 +194,35 @@ function DayEditor({ day, slots, week, isFirst, isLast, onDeleted }: { day: Day;
   );
 }
 
-function SortableSlot({ slot, week, linkedToPrev, onOpen }: { slot: Slot; week: number; linkedToPrev: boolean; onOpen: () => void }) {
+function SortableSlot({ slot, exercise, week, onOpen }: { slot: Slot; exercise: Exercise | undefined; week: number; onOpen: () => void }) {
   const settings = useSettings();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: slot.id });
   const n = setsForWeek(slot.sets, week, settings.extraSets);
   return (
-    <li
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cx('relative', isDragging && 'z-20', linkedToPrev && '-mt-1')}
-    >
-      {linkedToPrev && (
-        <span className="absolute -top-2 left-[58px] z-10 flex items-center gap-1 rounded-full bg-surface px-1.5 text-[11px] font-semibold text-accent-ink" aria-hidden>
-          <Link2 size={12} /> superserie
-        </span>
-      )}
-      <div
-        className={cx(
-          'flex min-h-[72px] items-center rounded-[18px] border bg-surface',
-          slot.superset ? 'border-[color-mix(in_srgb,var(--accent)_40%,transparent)]' : 'border-line',
-          isDragging && 'shadow-[var(--shadow)] ring-2 ring-[var(--accent)]',
-        )}
-      >
+    <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={cx('relative', isDragging && 'z-20')}>
+      <div className={cx('card-surface flex min-h-[80px] items-center rounded-[22px]', isDragging && 'shadow-[var(--shadow)] ring-2 ring-[var(--accent)]')}>
         <button
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
           aria-label={`Riordina ${slot.name}`}
-          className="flex h-[72px] w-11 shrink-0 cursor-grab touch-none items-center justify-center text-muted active:cursor-grabbing"
+          className="flex h-[80px] w-11 shrink-0 cursor-grab touch-none items-center justify-center text-muted active:cursor-grabbing"
         >
           <GripVertical size={20} aria-hidden />
         </button>
-        <button type="button" onClick={onOpen} className="pressable flex min-h-[72px] min-w-0 flex-1 items-center gap-3 py-2 pr-3 text-left">
-          <span className="flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] px-1 text-[15px] font-bold text-accent-ink tnum">{slot.label}</span>
+        <button type="button" onClick={onOpen} className="pressable flex min-h-[80px] min-w-0 flex-1 items-center gap-3 py-2 pr-3 text-left">
+          <span className="relative shrink-0">
+            <ExerciseThumb exercise={exercise} size={56} />
+            <span className="grad-accent absolute -top-1.5 -left-1.5 flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12px] font-extrabold text-on-accent tnum" aria-hidden>
+              {slot.label}
+            </span>
+          </span>
           <span className="min-w-0 flex-1">
-            <span className="line-clamp-2 text-[15px] leading-snug font-semibold">{slot.name}</span>
+            <span className="sr-only">{slot.label} </span>
+            <span className="line-clamp-2 text-[15px] leading-snug font-bold">{slot.name}</span>
             <span className="mt-0.5 block text-[13px] text-muted tnum">
-              {formatSetsColumn(slot.sets)} × {slot.reps} · RIR {slot.rir} · {slot.restSeconds === 0 ? 'subito la b' : formatRest(slot.restSeconds)}
+              {formatSetsColumn(slot.sets)} × {slot.reps} · RIR {slot.rir} · {slot.restSeconds === 0 ? 'senza recupero' : formatRest(slot.restSeconds)}
               {n === 0 && ' · nascosto questa settimana'}
             </span>
           </span>

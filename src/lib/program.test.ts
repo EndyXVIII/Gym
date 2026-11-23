@@ -5,15 +5,14 @@ import {
   dateInBlock,
   dayPlanSummary,
   displayReps,
-  groupSlots,
   isSlotHidden,
   lastPerformance,
   nextMonday,
+  normalizeOrder,
   performanceLabel,
   personalRecords,
   prefillFor,
   progressionHint,
-  relabel,
   setsForWeek,
   targetRir,
   volumeKg,
@@ -305,18 +304,37 @@ describe('records and totals', () => {
   });
 });
 
-describe('labels and supersets', () => {
-  it('recomputing labels gives the sheet labels back', () => {
+describe('labels (no supersets)', () => {
+  it('numbers every exercise 1..n in order, with no a/b labels', () => {
     for (const day of seed.days) {
-      const slots = seed.slots.filter((s) => s.dayKey === day.key);
-      expect(relabel(slots).map((s) => s.label)).toEqual(slots.map((s) => s.label));
+      const slots = seed.slots.filter((s) => s.dayKey === day.key).sort((x, y) => x.position - y.position);
+      expect(slots.map((s) => s.label)).toEqual(slots.map((_, i) => String(i + 1)));
+      expect(slots.every((s) => !s.superset)).toBe(true);
     }
+    expect(seed.slots.filter((s) => s.dayKey === 'upper-a')).toHaveLength(7);
+    expect(seed.slots.filter((s) => s.dayKey === 'lower-a')).toHaveLength(9);
   });
 
-  it('groups superset pairs together', () => {
-    const upperA = seed.slots.filter((s) => s.dayKey === 'upper-a');
-    const groups = groupSlots(upperA).map((g) => g.map((s) => s.label));
-    expect(groups).toEqual([['1'], ['2'], ['3'], ['4'], ['5'], ['6a', '6b']]);
+  it('keeps the same ids as before (they come from the sheet labels, e.g. 6a)', () => {
+    const s6a = seed.slots.find((s) => s.id === seedId('slot', 'upper-a', '6a'))!;
+    const s6b = seed.slots.find((s) => s.id === seedId('slot', 'upper-a', '6b'))!;
+    expect([s6a.exerciseKey, s6a.label]).toEqual(['overhead-cable-triceps-extension', '6']);
+    expect([s6b.exerciseKey, s6b.label]).toEqual(['bayesian-cable-curl', '7']);
+  });
+
+  it('exercises that were the "a" of a pair now have a rest of their own', () => {
+    const rest = (day: string, label: string) => seed.slots.find((s) => s.id === seedId('slot', day, label))!.restSeconds;
+    expect(rest('upper-a', '6a')).toBe(90);
+    expect(rest('upper-a', '6b')).toBe(60);
+    expect(rest('lower-a', '3a')).toBe(90);
+    expect(rest('lower-a', '4a')).toBe(90);
+    expect(rest('lower-b', '5a')).toBe(90);
+    expect(seed.slots.every((s) => s.restSeconds > 0)).toBe(true);
+  });
+
+  it('numbering and reordering', () => {
+    const moved = normalizeOrder([{ id: 'x', position: 9, label: '9' }, { id: 'y', position: 1, label: '1' }]);
+    expect(moved.map((s) => [s.id, s.position, s.label])).toEqual([['x', 1, '1'], ['y', 2, '2']]);
   });
 
   it('marks single-arm exercises', () => {

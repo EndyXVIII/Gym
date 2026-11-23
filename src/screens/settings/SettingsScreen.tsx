@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Download, ExternalLink, FileSpreadsheet, Upload, Volume2 } from 'lucide-react';
+import { CalendarRange, Database, Dumbbell, Download, ExternalLink, FileSpreadsheet, Info, Palette, Settings2, Upload, UserRound, Volume2 } from 'lucide-react';
 import { useSettings } from '../../app/SettingsContext';
 import { updateSettings, startNewBlock } from '../../lib/settingsOps';
 import { weekInfo } from '../../lib/program';
@@ -8,7 +8,7 @@ import { backupFileName, buildCsv, buildExport, importBackup, ImportError, saveF
 import { softBeep, unlockAudio } from '../../lib/feedback';
 import { capitalize, formatDateLong, formatKg } from '../../lib/format';
 import { REPDB_CREDIT, REPDB_URL } from '../../data/exerciseImages';
-import { Button, Card, cx, inputClass, ScreenHeader, Segmented, SectionTitle, Switch } from '../../components/ui';
+import { Button, Card, cx, IconTile, inputClass, ScreenHeader, Segmented, Switch, type Tone } from '../../components/ui';
 import { ConfirmSheet } from '../../components/Sheet';
 import { SyncDot } from '../../components/SyncDot';
 import { toast } from '../../components/Toast';
@@ -43,9 +43,18 @@ export default function SettingsScreen() {
 
   return (
     <div>
-      <ScreenHeader title="Impostazioni" right={<SyncDot className="p-2" />} />
-      <div className="flex flex-col gap-6 px-4">
-        <Section title="Profilo">
+      <ScreenHeader
+        title="Impostazioni"
+        subtitle="Scheda"
+        icon={
+          <IconTile tone="cyan" size={48} round>
+            <Settings2 size={24} />
+          </IconTile>
+        }
+        right={<SyncDot className="p-2" />}
+      />
+      <div className="flex flex-col gap-6 px-4 pt-2">
+        <Section title="Profilo" icon={<UserRound size={16} />} tone="blue">
           <Row>
             <label className="block">
               <span className="mb-1.5 block text-[13px] font-medium text-muted">Nome</span>
@@ -60,7 +69,7 @@ export default function SettingsScreen() {
           </Row>
         </Section>
 
-        <Section title="Blocco di 7 settimane">
+        <Section title="Blocco di 7 settimane" icon={<CalendarRange size={16} />} tone="pink">
           <Row>
             <label className="block">
               <span className="mb-1.5 block text-[13px] font-medium text-muted">Inizio del blocco (lunedì)</span>
@@ -81,7 +90,7 @@ export default function SettingsScreen() {
                 value={settings.weekOverride ?? ''}
                 onChange={(e) => void updateSettings({ weekOverride: e.target.value ? Number(e.target.value) : null })}
               >
-                <option value="">Automatica (dal calendario): settimana {Math.min(7, Math.max(1, w.calendar))}</option>
+                <option value="">Automatica: settimana {Math.min(7, Math.max(1, w.calendar))}</option>
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                   <option key={n} value={n}>
                     Settimana {n}
@@ -106,7 +115,7 @@ export default function SettingsScreen() {
           </Row>
         </Section>
 
-        <Section title="Allenamento">
+        <Section title="Allenamento" icon={<Dumbbell size={16} />} tone="amber">
           <Row>
             <label className="block">
               <span className="mb-1.5 block text-[13px] font-medium text-muted">Scatto di carico predefinito (− e +)</span>
@@ -139,7 +148,7 @@ export default function SettingsScreen() {
           </Row>
         </Section>
 
-        <Section title="Aspetto">
+        <Section title="Aspetto" icon={<Palette size={16} />} tone="pink">
           <Row>
             <Segmented
               label="Tema"
@@ -156,7 +165,7 @@ export default function SettingsScreen() {
 
         <AccountSection />
 
-        <Section title="Dati">
+        <Section title="Dati" icon={<Database size={16} />} tone="cyan">
           <Row>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="secondary" icon={<Download size={18} aria-hidden />} onClick={() => void exportJson()}>
@@ -185,7 +194,7 @@ export default function SettingsScreen() {
           </Row>
         </Section>
 
-        <Section title="Informazioni">
+        <Section title="Informazioni" icon={<Info size={16} />} tone="slate">
           <Row>
             <p className="text-[15px] font-semibold">Scheda {__APP_VERSION__}</p>
             <p className="mt-1 text-[14px] leading-relaxed text-muted">
@@ -221,11 +230,18 @@ export default function SettingsScreen() {
   );
 }
 
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({ title, icon, tone = 'blue', children }: { title: string; icon?: ReactNode; tone?: Tone; children: ReactNode }) {
   return (
     <section>
-      <SectionTitle>{title}</SectionTitle>
-      <Card className="mt-2 divide-y divide-[var(--border)]">{children}</Card>
+      <div className="flex items-center gap-2.5 px-1">
+        {icon && (
+          <IconTile tone={tone} size={30} className="rounded-[10px]">
+            {icon}
+          </IconTile>
+        )}
+        <h2 className="eyebrow text-muted">{title}</h2>
+      </div>
+      <Card className="mt-2.5 divide-y divide-[var(--border)]">{children}</Card>
     </section>
   );
 }

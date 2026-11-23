@@ -3,11 +3,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocation } from 'wouter';
 import { ChevronLeft, ChevronRight, Pencil, StickyNote } from 'lucide-react';
 import { loadExerciseHistory } from '../../lib/exerciseHistory';
-import { muscleLabel } from '../../lib/muscles';
+import { muscleGroup, muscleLabel } from '../../lib/muscles';
 import { displayReps, isWorkingDone, volumeKg } from '../../lib/program';
 import { capitalize, formatDateLong, formatKg, formatVolume } from '../../lib/format';
 import { accentStyle, Badge, Card, Chip, cx, EmptyState, IconButton, ScreenSkeleton } from '../../components/ui';
 import { Sparkline } from '../../components/Sparkline';
+import { ExerciseThumb } from '../../components/ExerciseThumb';
 import { ExerciseEditorSheet } from '../program/ExerciseEditorSheet';
 
 /** Full log of one exercise, every day it was done, by block and week. */
@@ -39,7 +40,7 @@ export default function ExerciseHistoryScreen({ exerciseKey }: { exerciseKey: st
         <Card className="p-4">
           <div className="flex flex-wrap gap-1.5">
             {exercise?.primary.map((m) => (
-              <Chip key={m} tone="accent">
+              <Chip key={m} tone={muscleGroup(m)}>
                 {muscleLabel(m)}
               </Chip>
             ))}
@@ -50,9 +51,10 @@ export default function ExerciseHistoryScreen({ exerciseKey }: { exerciseKey: st
             ))}
           </div>
           <div className="mt-4 flex items-end justify-between gap-4">
-            <div>
+            <ExerciseThumb exercise={exercise} size={72} className="self-center" />
+            <div className="min-w-0 flex-1">
               <p className="text-[13px] text-muted">Serie migliore</p>
-              <p className="text-[28px] leading-tight font-bold tnum">{summary?.best ? `${formatKg(summary.best.weightKg)} kg × ${displayReps(summary.best)}` : '—'}</p>
+              <p className="text-[26px] leading-tight font-extrabold tnum">{summary?.best ? `${formatKg(summary.best.weightKg)} kg × ${displayReps(summary.best)}` : '—'}</p>
               <p className="text-[13px] text-muted tnum">
                 {summary?.sessions ?? 0} sessioni{summary?.days.length ? ` · ${summary.days.map((d) => d.title).join(', ')}` : ' · fuori programma'}
               </p>

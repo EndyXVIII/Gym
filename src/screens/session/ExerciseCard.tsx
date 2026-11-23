@@ -1,7 +1,7 @@
-import { memo, useCallback, useMemo, useState, type ReactNode } from 'react';
-import { ArrowLeftRight, Check, CopyCheck, Flame, History, Info, MoreHorizontal, Plus, RotateCcw, SkipForward, Trash2, TrendingUp, Undo2 } from 'lucide-react';
-import { formatDateShort, formatKg, formatRest, formatSet, roundToStep } from '../../lib/format';
-import { muscleLabel } from '../../lib/muscles';
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ArrowLeftRight, Check, ChevronDown, CopyCheck, Flame, History, Info, MoreHorizontal, Plus, Repeat2, RotateCcw, SkipForward, Target, Timer, Trash2, TrendingUp, Undo2 } from 'lucide-react';
+import { formatDateShort, formatRest, formatSet, roundToStep } from '../../lib/format';
+import { muscleGroup, muscleLabel } from '../../lib/muscles';
 import { performanceLabel, prefillFor, progressionHint, targetRir, topSet, type Performance } from '../../lib/program';
 import { allWorkingDone, appendIndex, buildRows, warmupIndex, type SetRowModel } from '../../lib/sessionRows';
 import { addRow, deleteRow, fillRows, saveRow, setDone, setSkipped, setWarmup, type RowTarget, type RowValues } from '../../lib/sessionOps';
@@ -9,7 +9,7 @@ import { restTimer } from '../../lib/timer';
 import { undoStore } from '../../lib/repo';
 import type { Exercise, Session, SetLog, Slot } from '../../lib/types';
 import { ActionSheet, type SheetAction } from '../../components/Sheet';
-import { Button, Card, Chip, cx, IconButton } from '../../components/ui';
+import { Button, Card, Chip, cx, IconButton, IconTile } from '../../components/ui';
 import { toast } from '../../components/Toast';
 import { SET_GRID, SetRow } from './SetRow';
 
@@ -23,13 +23,15 @@ export interface ExerciseCardProps {
   last: Performance | null;
   week: number;
   planned: number;
-  /** Rest started when a set is checked (0 = none, e.g. the "a" of a superset). */
+  /** Rest started when a set is checked (0 = none). */
   restSeconds: number;
   skipped: boolean;
   /** Display name of the slot when the exercise is replaced for today. */
   substitutedFrom: string | null;
   prs: Set<string>;
   loadStep: number;
+  /** The next exercise to do: highlighted. */
+  isCurrent: boolean;
   media?: ReactNode;
   onChecked?: (slotId: string) => void;
   onDetails: () => void;
@@ -38,7 +40,7 @@ export interface ExerciseCardProps {
 }
 
 export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
-  const { session, slot, exercise, exerciseKey, logs, last, week, planned, restSeconds, skipped, substitutedFrom, prs, loadStep } = p;
+  const { session, slot, exercise, exerciseKey, logs, last, week, planned, restSeconds, skipped, substitutedFrom, prs, loadStep, isCurrent } = p;
   const [menuOpen, setMenuOpen] = useState(false);
   const [rowMenu, setRowMenu] = useState<SetRowModel | null>(null);
 
@@ -50,6 +52,20 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
   const lastLabel = last ? performanceLabel(last) : null;
   const complete = allWorkingDone(rows);
   const slotId = slot?.id ?? null;
+
+  // A finished exercise folds up to one line (after a moment, so the last tick is seen); tap to open it again.
+  const [open, setOpen] = useState(false);
+  const [settled, setSettled] = useState(complete);
+  useEffect(() => {
+    if (!complete) {
+      setSettled(false);
+      setOpen(false);
+      return;
+    }
+    const t = window.setTimeout(() => setSettled(true), 700);
+    return () => window.clearTimeout(t);
+  }, [complete]);
+  const collapsed = settled && !open;
 
   const target = useCallback(
     (row: Pick<SetRowModel, 'setIndex' | 'log' | 'isWarmup'>): RowTarget => ({
@@ -83,6 +99,8 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
   );
 
   const unchecked = rows.filter((r) => !r.done && !r.isWarmup);
+  const doneRows = rows.filter((r) => r.done && !r.isWarmup);
+  const best = topSet(doneRows.map((r) => ({ weightKg: r.weightKg, reps: r.reps })));
 
   const applyLast = () => {
     if (!last) return;
@@ -137,9 +155,9 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
   if (skipped && slot) {
     return (
       <Card className="flex items-center gap-3 p-3">
-        <LabelBadge label={slot.label} muted />
+        <NumberTile label={slot.label} state="skipped" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-medium text-muted line-through">{name}</p>
+          <p className="truncate text-[15px] font-semibold text-muted line-through">{name}</p>
           <p className="text-[13px] text-muted">Saltato oggi</p>
         </div>
         <Button variant="secondary" size="sm" icon={<RotateCcw size={16} aria-hidden />} onClick={() => skip(false)}>
@@ -186,123 +204,148 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
       ]
     : [];
 
+  const toggleLabel = `${collapsed ? 'Mostra' : 'Nascondi'} le serie: ${name}`;
+
   return (
     <Card
       as="article"
       aria-label={name}
-      className={cx('scroll-mt-28 overflow-hidden transition-colors duration-200', complete && 'border-[color-mix(in_srgb,var(--success)_45%,transparent)]')}
+      aria-current={isCurrent ? 'step' : undefined}
+      className={cx(
+        'scroll-mt-32 overflow-hidden transition-all duration-300',
+        isCurrent && !complete && 'border-[color-mix(in_srgb,var(--accent)_70%,var(--border))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_45%,transparent),0_18px_40px_-20px_var(--accent)]',
+        complete && 'border-[color-mix(in_srgb,var(--success)_40%,var(--border))]',
+      )}
     >
-      {p.media && <div className="px-3 pt-3">{p.media}</div>}
-      <div className="flex items-start gap-3 px-3 pt-3">
-        {slot ? <LabelBadge label={slot.label} /> : <LabelBadge label="+" muted />}
+      <div className="flex items-start gap-3 p-3">
+        <NumberTile label={slot?.label ?? '+'} state={complete ? 'done' : slot ? (isCurrent ? 'current' : 'todo') : 'extra'} />
         <div className="min-w-0 flex-1 pt-0.5">
-          <h2 className="text-[17px] leading-snug font-semibold">{name}</h2>
-          {substitutedFrom && <p className="mt-0.5 text-[13px] text-muted">Sostituisce per oggi: {substitutedFrom}</p>}
-          {!slot && <p className="mt-0.5 text-[13px] text-muted">Fuori programma</p>}
-        </div>
-        {complete && (
-          <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-success text-on-accent" aria-label="Esercizio completato">
-            <Check size={16} strokeWidth={3.2} aria-hidden />
-          </span>
-        )}
-        <IconButton label={`Dettagli: ${name}`} size={48} className="-mr-1 shrink-0 text-muted" onClick={p.onDetails}>
-          <Info size={21} aria-hidden />
-        </IconButton>
-        <IconButton label={`Altre azioni: ${name}`} size={48} className="-mr-2 shrink-0 text-muted" onClick={() => setMenuOpen(true)}>
-          <MoreHorizontal size={22} aria-hidden />
-        </IconButton>
-      </div>
-
-      {slot && (
-        <div className="mt-2 flex flex-wrap gap-1.5 px-3">
-          <Chip>
-            {planned} × {slot.reps}
-          </Chip>
-          <Chip>RIR {targetRir(slot.rir, slot.kind, week)}</Chip>
-          {slot.superset?.role === 'a' ? (
-            <Chip tone="accent">poi subito la b</Chip>
+          <h2 className="text-[17px] leading-snug font-bold">
+            {complete ? (
+              <button type="button" aria-expanded={!collapsed} onClick={() => setOpen((o) => !o)} className="pressable w-full text-left" aria-label={toggleLabel}>
+                {name}
+              </button>
+            ) : (
+              name
+            )}
+          </h2>
+          {collapsed && best ? (
+            <p className="mt-0.5 text-[13px] font-semibold text-success-ink tnum">
+              {doneRows.length} serie · {best.weightKg === null ? `${best.reps ?? '—'} rip.` : formatSet(best.weightKg, best.reps)}
+            </p>
           ) : (
-            slot.restSeconds > 0 && <Chip>Recupero {formatRest(slot.restSeconds)}</Chip>
+            <>
+              {substitutedFrom && <p className="mt-0.5 text-[13px] text-muted">Sostituisce per oggi: {substitutedFrom}</p>}
+              {!slot && <p className="mt-0.5 text-[13px] text-muted">Fuori programma</p>}
+              {isCurrent && !complete && !substitutedFrom && slot && <p className="eyebrow mt-0.5 text-accent-ink">Ora tocca a te</p>}
+            </>
           )}
-          {slot.singleArm && <Chip tone="warning">un braccio alla volta</Chip>}
         </div>
-      )}
-
-      {exercise && (exercise.primary.length > 0 || exercise.secondary.length > 0) && (
-        <ul className="mt-2 flex flex-wrap gap-1.5 px-3" aria-label="Muscoli">
-          {exercise.primary.map((m) => (
-            <li key={m}>
-              <Chip tone="accent">{muscleLabel(m)}</Chip>
-            </li>
-          ))}
-          {exercise.secondary.map((m) => (
-            <li key={m}>
-              <Chip tone="muted">{muscleLabel(m)}</Chip>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-3 flex flex-col gap-1.5 px-3">
-        {lastLabel && last ? (
-          <button
-            type="button"
-            onClick={applyLast}
-            className="pressable flex min-h-12 w-full items-center gap-2.5 rounded-2xl bg-raised px-3 text-left"
-            aria-label={`Ultima volta: ${formatSet(lastLabel.weightKg, lastLabel.reps)}. Tocca per inserire questi valori`}
-          >
-            <History size={18} className="shrink-0 text-muted" aria-hidden />
-            <span className="min-w-0 flex-1 text-[15px]">
-              Ultima volta: <span className="font-semibold tnum">{formatSet(lastLabel.weightKg, lastLabel.reps)}</span>
-              {last.sets.length > 1 && <span className="text-muted tnum"> · {last.sets.length} serie</span>}
-            </span>
-            <span className="shrink-0 text-[13px] text-muted">{formatDateShort(last.session.date)}</span>
-          </button>
+        {collapsed ? (
+          <IconButton label={toggleLabel} size={48} className="-mr-1 shrink-0 text-muted" onClick={() => setOpen(true)}>
+            <ChevronDown size={22} aria-hidden />
+          </IconButton>
         ) : (
-          <p className="flex min-h-10 items-center gap-2.5 px-1 text-[14px] text-muted">
-            <History size={18} aria-hidden /> Nessuno storico: prima volta.
-          </p>
+          <>
+            <IconButton label={`Dettagli: ${name}`} size={48} className="-mr-1 shrink-0 text-muted" onClick={p.onDetails}>
+              <Info size={21} aria-hidden />
+            </IconButton>
+            <IconButton label={`Altre azioni: ${name}`} size={48} className="-mr-2 shrink-0 text-muted" onClick={() => setMenuOpen(true)}>
+              <MoreHorizontal size={22} aria-hidden />
+            </IconButton>
+          </>
         )}
-        {hint.kind !== 'first' && (
-          <button
-            type="button"
-            onClick={applyHint}
-            className="pressable flex min-h-11 w-full items-center gap-2.5 rounded-2xl px-3 text-left"
-            aria-label={`${hint.text}. Tocca per applicarlo alle serie non fatte`}
-          >
-            <TrendingUp size={18} className="shrink-0 text-accent-ink" aria-hidden />
-            <span className="text-[14px] text-accent-ink">{hint.text}</span>
-          </button>
-        )}
-        {hint.kind === 'first' && <p className="px-1 text-[14px] text-muted">{hint.text}</p>}
       </div>
 
-      <div className="mt-2 px-1.5 pb-1">
-        {rows.length > 0 && (
-          <div className={cx(SET_GRID, 'px-0.5 pb-1 text-[13px] font-medium text-muted')} aria-hidden>
-            <span className="text-center">Serie</span>
-            <span className="col-span-3 text-center">Peso (kg)</span>
-            <span className="text-center">Rip.</span>
-            <span />
+      <div className="grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: collapsed ? '0fr' : '1fr' }} inert={collapsed}>
+        <div className="min-h-0 overflow-hidden">
+          {p.media && <div className="px-3">{p.media}</div>}
+
+          {slot && (
+            <div className="mt-3 flex flex-wrap gap-1.5 px-3">
+              <Chip icon={<Repeat2 size={14} aria-hidden />}>
+                {planned} × {slot.reps}
+              </Chip>
+              <Chip icon={<Target size={14} aria-hidden />}>RIR {targetRir(slot.rir, slot.kind, week)}</Chip>
+              {slot.restSeconds > 0 && <Chip icon={<Timer size={14} aria-hidden />}>Recupero {formatRest(slot.restSeconds)}</Chip>}
+              {slot.singleArm && <Chip tone="warning">un braccio alla volta</Chip>}
+            </div>
+          )}
+
+          {exercise && (exercise.primary.length > 0 || exercise.secondary.length > 0) && (
+            <ul className="mt-2 flex flex-wrap gap-1.5 px-3" aria-label="Muscoli">
+              {exercise.primary.map((m) => (
+                <li key={m}>
+                  <Chip tone={muscleGroup(m)}>{muscleLabel(m)}</Chip>
+                </li>
+              ))}
+              {exercise.secondary.map((m) => (
+                <li key={m}>
+                  <Chip tone="muted">{muscleLabel(m)}</Chip>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="mt-3 flex flex-col gap-1.5 px-3">
+            {lastLabel && last ? (
+              <button
+                type="button"
+                onClick={applyLast}
+                className="pressable flex min-h-14 w-full items-center gap-3 rounded-[20px] bg-raised px-3 text-left"
+                aria-label={`Ultima volta: ${formatSet(lastLabel.weightKg, lastLabel.reps)}. Tocca per inserire questi valori`}
+              >
+                <IconTile tone="slate" size={34}>
+                  <History size={17} />
+                </IconTile>
+                <span className="min-w-0 flex-1 text-[15px]">
+                  Ultima volta: <span className="font-extrabold tnum">{formatSet(lastLabel.weightKg, lastLabel.reps)}</span>
+                  {last.sets.length > 1 && <span className="text-muted tnum"> · {last.sets.length} serie</span>}
+                </span>
+                <span className="shrink-0 text-[13px] text-muted">{formatDateShort(last.session.date)}</span>
+              </button>
+            ) : (
+              <p className="flex min-h-10 items-center gap-2.5 px-1 text-[14px] text-muted">
+                <History size={18} aria-hidden /> Nessuno storico: prima volta.
+              </p>
+            )}
+            {hint.kind !== 'first' ? (
+              <button
+                type="button"
+                onClick={applyHint}
+                className="pressable grad-accent-soft flex min-h-12 w-full items-center gap-2.5 rounded-[18px] px-3 text-left"
+                aria-label={`${hint.text}. Tocca per applicarlo alle serie non fatte`}
+              >
+                <TrendingUp size={18} className="shrink-0 text-accent-ink" aria-hidden />
+                <span className="text-[14px] font-semibold text-accent-ink">{hint.text}</span>
+              </button>
+            ) : (
+              <p className="px-1 text-[14px] text-muted">{hint.text}</p>
+            )}
           </div>
-        )}
-        <div className="flex flex-col gap-1.5">
-          {rows.map((r) => (
-            <SetRow key={r.key} row={r} step={loadStep} isPr={!!r.log && prs.has(r.log.id)} onSave={onSave} onToggle={onToggle} onMenu={setRowMenu} exerciseName={name} />
-          ))}
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2 px-3 pt-1 pb-3">
-        <Button variant="ghost" size="md" icon={<Plus size={18} aria-hidden />} onClick={addSet} className="text-accent-ink">
-          Aggiungi serie
-        </Button>
-        <span className="flex-1" />
-        {last && (
-          <span className="text-[12px] text-muted tnum" aria-hidden>
-            {formatKg(loadStep)} kg / scatto
-          </span>
-        )}
+          <div className="mt-3 px-1.5 pb-1">
+            {rows.length > 0 && (
+              <div className={cx(SET_GRID, 'px-0.5 pb-1 text-[12px] font-bold tracking-wide text-muted uppercase')} aria-hidden>
+                <span className="text-center">Serie</span>
+                <span className="col-span-3 text-center">Peso (kg)</span>
+                <span className="text-center">Rip.</span>
+                <span />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {rows.map((r) => (
+                <SetRow key={r.key} row={r} step={loadStep} isPr={!!r.log && prs.has(r.log.id)} onSave={onSave} onToggle={onToggle} onMenu={setRowMenu} exerciseName={name} />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 pt-1 pb-3">
+            <Button variant="ghost" size="md" icon={<Plus size={18} aria-hidden />} onClick={addSet} className="text-accent-ink">
+              Aggiungi serie
+            </Button>
+          </div>
+        </div>
       </div>
 
       <ActionSheet open={menuOpen} onClose={() => setMenuOpen(false)} title={name} actions={menu} />
@@ -316,12 +359,27 @@ export const ExerciseCard = memo(function ExerciseCard(p: ExerciseCardProps) {
   );
 });
 
-function LabelBadge({ label, muted }: { label: string; muted?: boolean }) {
+function NumberTile({ label, state }: { label: string; state: 'done' | 'current' | 'todo' | 'extra' | 'skipped' }) {
+  if (state === 'done') {
+    return (
+      <IconTile tone="green" size={40}>
+        <Check size={22} strokeWidth={3.4} />
+        <span className="sr-only">Esercizio completato</span>
+      </IconTile>
+    );
+  }
+  if (state === 'current') {
+    return (
+      <span className="grad-accent glow-accent flex h-10 min-w-10 shrink-0 items-center justify-center rounded-[14px] px-1 text-[17px] font-extrabold text-on-accent tnum" aria-hidden>
+        {label}
+      </span>
+    );
+  }
   return (
     <span
       className={cx(
-        'flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl px-1.5 text-[15px] font-bold tnum',
-        muted ? 'bg-raised text-muted' : 'bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] text-accent-ink',
+        'flex h-10 min-w-10 shrink-0 items-center justify-center rounded-[14px] px-1 text-[17px] font-extrabold tnum',
+        state === 'todo' ? 'bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] text-accent-ink' : 'bg-raised text-muted',
       )}
       aria-hidden
     >

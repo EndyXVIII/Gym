@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocation } from 'wouter';
-import { ArrowLeftRight, History, Link2, Pencil, Trash2, Unlink } from 'lucide-react';
+import { ArrowLeftRight, History, Pencil, Trash2 } from 'lucide-react';
 import { db } from '../../lib/db';
-import { deleteSlot, pairWithNext, swapExercise, unpair, updateSlot } from '../../lib/programOps';
+import { deleteSlot, swapExercise, updateSlot } from '../../lib/programOps';
 import { parseRange } from '../../lib/program';
 import { formatRest } from '../../lib/format';
 import { undoStore } from '../../lib/repo';
@@ -20,11 +20,8 @@ const REST_OPTIONS = [0, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300];
 async function loadSlotContext(id: string) {
   const slot = await db.slots.get(id);
   if (!slot || slot.deletedAt) return null;
-  const siblings = (await db.slots.where('dayKey').equals(slot.dayKey).toArray()).filter((s) => !s.deletedAt).sort((a, b) => a.position - b.position);
   const exercise = (await db.exercises.where('key').equals(slot.exerciseKey).toArray()).find((e) => !e.deletedAt);
-  const i = siblings.findIndex((s) => s.id === id);
-  const partner = slot.superset ? siblings.find((s) => s.id !== id && s.superset?.group === slot.superset!.group) : undefined;
-  return { slot, exercise, next: siblings[i + 1], partner };
+  return { slot, exercise };
 }
 
 /** Everything about one exercise of a day, editable from the phone. Changes save by themselves. */
@@ -36,14 +33,14 @@ export function SlotEditorSheet({ slotId, onClose }: { slotId: string | null; on
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!slotId || !ctx) return null;
-  const { slot, exercise, next, partner } = ctx;
+  const { slot, exercise } = ctx;
 
   return (
     <>
       <Sheet open={!!slotId && !swapOpen && !exerciseOpen && !confirmDelete} onClose={onClose} title={`${slot.label} · ${slot.name}`}>
         <SlotForm key={slot.id} slot={slot} />
 
-        <div className="mt-5 rounded-2xl border border-line p-3">
+        <div className="card-surface mt-5 rounded-[22px] p-3">
           <p className="text-[13px] font-medium text-muted">Esercizio in libreria</p>
           <p className="mt-0.5 text-[16px] font-semibold">{exercise?.name ?? slot.exerciseKey}</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -67,35 +64,6 @@ export function SlotEditorSheet({ slotId, onClose }: { slotId: string | null; on
           >
             Storico di questo esercizio
           </Button>
-        </div>
-
-        <div className="mt-3 rounded-2xl border border-line p-3">
-          <p className="text-[13px] font-medium text-muted">Superserie</p>
-          {partner ? (
-            <>
-              <p className="mt-0.5 text-[15px]">
-                In coppia con <span className="font-semibold">{partner.label} {partner.name}</span>
-              </p>
-              <Button variant="secondary" size="sm" block className="mt-3" icon={<Unlink size={16} aria-hidden />} onClick={() => void unpair(slot.id)}>
-                Separa la superserie
-              </Button>
-            </>
-          ) : next && !next.superset ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              block
-              className="mt-2"
-              icon={<Link2 size={16} aria-hidden />}
-              onClick={async () => {
-                if (await pairWithNext(slot.id)) toast.show('Superserie: fai la a, poi subito la b, poi 1 minuto di recupero');
-              }}
-            >
-              Abbina con {next.label} {next.name}
-            </Button>
-          ) : (
-            <p className="mt-1 text-[14px] text-muted">Per creare una superserie, porta l’esercizio da abbinare subito sotto questo.</p>
-          )}
         </div>
 
         <Button variant="danger" block className="mt-4" icon={<Trash2 size={18} aria-hidden />} onClick={() => setConfirmDelete(true)}>
@@ -154,7 +122,6 @@ function SlotForm({ slot }: { slot: Slot }) {
 
   const repsValid = !!parseRange(reps);
   const rirValid = !!parseRange(rir);
-  const isA = slot.superset?.role === 'a';
 
   return (
     <div className="flex flex-col gap-4">
@@ -199,11 +166,11 @@ function SlotForm({ slot }: { slot: Slot }) {
         </Field>
       </div>
 
-      <Field label={isA ? 'Recupero (la «a» passa subito alla «b»)' : 'Recupero'} htmlFor="slot-rest">
+      <Field label="Recupero tra le serie" htmlFor="slot-rest">
         <select id="slot-rest" className={inputClass} value={slot.restSeconds} onChange={(e) => void updateSlot(slot.id, { restSeconds: Number(e.target.value) })}>
           {[...new Set([...REST_OPTIONS, slot.restSeconds])].sort((a, b) => a - b).map((s) => (
             <option key={s} value={s}>
-              {s === 0 ? 'Nessuno (subito il prossimo)' : formatRest(s)}
+              {s === 0 ? 'Nessuno' : formatRest(s)}
             </option>
           ))}
         </select>

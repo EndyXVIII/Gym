@@ -1,10 +1,10 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocation } from 'wouter';
-import { BookOpen, ChevronLeft, Link2, MoreHorizontal, StickyNote, Trash2, Undo2 } from 'lucide-react';
+import { BookOpen, Check, ChevronLeft, MoreHorizontal, PieChart, StickyNote, Trash2, Undo2 } from 'lucide-react';
 import { useSettings } from '../../app/SettingsContext';
 import { useKeyboardInset, useNow, useWakeLock } from '../../lib/hooks';
-import { DEFAULT_LOAD_STEP, groupSlots, setsForWeek } from '../../lib/program';
+import { DEFAULT_LOAD_STEP, isWorkingDone, setsForWeek } from '../../lib/program';
 import { loadSessionView, type SessionView } from '../../lib/queries';
 import { allWorkingDone, buildRows } from '../../lib/sessionRows';
 import { discardSession, finishSession, setSubstitution, updateSessionNote } from '../../lib/sessionOps';
@@ -13,16 +13,16 @@ import { restTimer } from '../../lib/timer';
 import { createExercise } from '../../lib/libraryOps';
 import { capitalize, formatDateLong, formatDuration } from '../../lib/format';
 import type { Slot } from '../../lib/types';
-import { accentStyle, Button, cx, EmptyState, IconButton, inputClass, ScreenSkeleton } from '../../components/ui';
+import { accentStyle, Button, cx, EmptyState, IconButton, IconTile, inputClass, ScreenSkeleton } from '../../components/ui';
 import { ActionSheet, ConfirmSheet, Sheet } from '../../components/Sheet';
 import { ExercisePicker } from '../../components/ExercisePicker';
 import { ExerciseDetailSheet } from '../../components/ExerciseDetailSheet';
+import { ExerciseMedia } from '../../components/ExerciseMedia';
+import { MediaControls } from '../../components/MediaControls';
 import { SyncDot } from '../../components/SyncDot';
 import { toast } from '../../components/Toast';
 import { RulesSheet } from '../today/RulesSheet';
 import { ExerciseCard } from './ExerciseCard';
-import { ExerciseMedia } from '../../components/ExerciseMedia';
-import { MediaControls } from '../../components/MediaControls';
 import { RestTimerBar } from './RestTimerBar';
 import { FinishSheet } from './FinishSheet';
 
@@ -59,14 +59,15 @@ function SessionBody({ view }: { view: SessionView }) {
   const undoEntry = useSyncExternalStore(undoStore.subscribe, undoStore.getSnapshot, undoStore.getSnapshot);
 
   const [finishOpen, setFinishOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [detailsFor, setDetailsFor] = useState<{ slot: Slot | null; key: string } | null>(null);
   const [substituteFor, setSubstituteFor] = useState<Slot | null>(null);
-  const groupRefs = useRef(new Map<number, HTMLDivElement>());
-  const pendingScroll = useRef<number | null>(null);
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+  const pendingScroll = useRef<string | null>(null);
 
   // Start every session with a clean undo history.
   useEffect(() => undoStore.clear(), [session.id]);
@@ -75,7 +76,6 @@ function SessionBody({ view }: { view: SessionView }) {
     () => slots.filter((s) => setsForWeek(s.sets, week, settings.extraSets) > 0 || (view.logsBySlot.get(s.id)?.length ?? 0) > 0),
     [slots, week, settings.extraSets, view.logsBySlot],
   );
-  const groups = useMemo(() => groupSlots(visibleSlots), [visibleSlots]);
 
   const keyFor = useCallback((s: Slot) => session.substitutions[s.id] ?? s.exerciseKey, [session.substitutions]);
   const loadStepFor = (key: string) => view.exercises.get(key)?.loadStepKg ?? settings.defaultLoadStepKg ?? DEFAULT_LOAD_STEP;
@@ -89,37 +89,41 @@ function SessionBody({ view }: { view: SessionView }) {
     [session.skipped, view.logsBySlot, view.last, week, settings.extraSets, keyFor],
   );
 
-  // After the last set of an exercise (or of both halves of a superset), bring the next one into view.
+  const currentId = useMemo(() => (finished ? null : (visibleSlots.find((s) => !isComplete(s))?.id ?? null)), [finished, visibleSlots, isComplete]);
+
+  // After the last set of an exercise, bring the next one into view (once the finished one has folded up).
   useEffect(() => {
     const from = pendingScroll.current;
     if (from === null) return;
     pendingScroll.current = null;
-    if (!groups[from]?.every(isComplete)) return;
-    const next = groups.findIndex((g, i) => i > from && !g.every(isComplete));
-    if (next < 0) return;
-    window.setTimeout(() => groupRefs.current.get(next)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 350);
-  }, [view, groups, isComplete]);
+    const i = visibleSlots.findIndex((s) => s.id === from);
+    if (i < 0 || !isComplete(visibleSlots[i])) return;
+    const next = visibleSlots.find((s, j) => j > i && !isComplete(s));
+    if (!next) return;
+    window.setTimeout(() => cardRefs.current.get(next.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 950);
+  }, [view, visibleSlots, isComplete]);
 
-  const onChecked = useCallback(
-    (slotId: string) => {
-      pendingScroll.current = groups.findIndex((g) => g.some((s) => s.id === slotId));
-    },
-    [groups],
-  );
-
-  const restFor = (s: Slot): number => {
-    if (s.superset?.role === 'a') {
-      // "a" starts no timer, unless its "b" is skipped or hidden this week.
-      const partner = slots.find((x) => x.superset?.group === s.superset?.group && x.id !== s.id);
-      const partnerOff = !partner || session.skipped.includes(partner.id) || setsForWeek(partner.sets, week, settings.extraSets) === 0;
-      return partnerOff ? (partner?.restSeconds ?? 60) : 0;
-    }
-    return s.restSeconds;
-  };
+  const onChecked = useCallback((slotId: string) => {
+    pendingScroll.current = slotId;
+  }, []);
 
   const allLogs = useMemo(() => [...[...view.logsBySlot.values()].flat(), ...[...view.orphanLogs.values()].flat()], [view.logsBySlot, view.orphanLogs]);
-  const doneSets = allLogs.filter((l) => l.doneAt && !l.isWarmup).length;
+  const doneSets = allLogs.filter(isWorkingDone).length;
   const minutes = session.startedAt ? (finished ? Date.parse(session.finishedAt!) : now) - Date.parse(session.startedAt) : 0;
+
+  // Progress of the whole workout: sets done / sets planned.
+  const planned = useMemo(() => {
+    let total = 0;
+    for (const s of visibleSlots) {
+      if (session.skipped.includes(s.id)) continue;
+      const done = (view.logsBySlot.get(s.id) ?? []).filter(isWorkingDone).length;
+      total += Math.max(done, setsForWeek(s.sets, week, settings.extraSets));
+    }
+    for (const logs of view.orphanLogs.values()) total += logs.filter(isWorkingDone).length;
+    return total;
+  }, [visibleSlots, session.skipped, view.logsBySlot, view.orphanLogs, week, settings.extraSets]);
+  const progress = planned > 0 ? Math.min(1, doneSets / planned) : 0;
+  const allDone = !finished && doneSets > 0 && visibleSlots.every(isComplete);
 
   const finish = async (note: string) => {
     await finishSession(session.id, note);
@@ -164,13 +168,13 @@ function SessionBody({ view }: { view: SessionView }) {
 
   return (
     <div style={accentStyle(day?.type)} className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-line bg-[var(--tabbar)] pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150">
+      <header className="sticky top-0 z-30 border-b border-line bg-[var(--glass)] pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150">
         <div className="flex min-h-14 items-center gap-1 px-1">
           <IconButton label="Torna a Oggi" onClick={() => navigate('/')}>
             <ChevronLeft size={26} aria-hidden />
           </IconButton>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[17px] font-bold">{day?.title ?? 'Allenamento'}</h1>
+            <h1 className="truncate text-[18px] font-extrabold">{day?.title ?? 'Allenamento'}</h1>
             <p className="truncate text-[13px] text-muted tnum">
               Settimana {week}
               {week === 7 ? ' · Scarico' : ''} · {finished ? capitalize(formatDateLong(session.date)) : `${formatDuration(minutes)} · ${doneSets} serie`}
@@ -184,60 +188,71 @@ function SessionBody({ view }: { view: SessionView }) {
             <MoreHorizontal size={24} aria-hidden />
           </IconButton>
         </div>
+        <div
+          className="h-1.5 bg-[color-mix(in_srgb,var(--text)_8%,transparent)]"
+          role="progressbar"
+          aria-label="Avanzamento dell’allenamento"
+          aria-valuemin={0}
+          aria-valuemax={planned}
+          aria-valuenow={Math.min(doneSets, planned)}
+          aria-valuetext={`${doneSets} serie su ${planned}`}
+        >
+          <div className="grad-accent h-full rounded-r-full transition-[width] duration-500 ease-out" style={{ width: `${progress * 100}%` }} />
+        </div>
       </header>
 
       {finished && (
-        <p className="mx-3 mt-3 rounded-2xl bg-raised px-4 py-3 text-[14px] text-muted">
-          Allenamento completato. Puoi correggere le serie: ogni modifica si salva da sola.
-        </p>
+        <div className="card-surface mx-3 mt-3 flex items-center gap-3 rounded-[22px] p-3">
+          <IconTile tone="green" size={44}>
+            <Check size={22} strokeWidth={3.4} />
+          </IconTile>
+          <p className="min-w-0 flex-1 text-[14px] text-muted">
+            <span className="block text-[16px] font-extrabold text-ink">Allenamento completato</span>
+            Puoi correggere le serie: ogni modifica si salva da sola.
+          </p>
+          <Button variant="secondary" size="sm" icon={<PieChart size={16} aria-hidden />} onClick={() => setSummaryOpen(true)}>
+            Riepilogo
+          </Button>
+        </div>
       )}
 
-      <div className="flex flex-col gap-4 px-3 pt-3" style={{ paddingBottom: footerHeight + 160 + keyboard }}>
-        {groups.map((g, gi) => (
-          <div
-            key={g[0].id}
-            ref={(el) => {
-              if (el) groupRefs.current.set(gi, el);
-              else groupRefs.current.delete(gi);
-            }}
-            className={cx('scroll-mt-24', g.length > 1 && 'relative')}
-          >
-            {g.length > 1 && <span aria-hidden className="absolute top-8 bottom-8 left-[-6px] w-[3px] rounded-full bg-[color-mix(in_srgb,var(--accent)_55%,transparent)]" />}
-            {g.map((s, i) => {
-              const key = keyFor(s);
-              const substituted = key !== s.exerciseKey;
-              return (
-                <Fragment key={s.id}>
-                  {i > 0 && (
-                    <div className="flex items-center gap-2 py-2 pl-3 text-[13px] font-semibold text-accent-ink" aria-label="Superserie: poi subito la b">
-                      <Link2 size={16} aria-hidden /> poi subito la b
-                    </div>
-                  )}
-                  <ExerciseCard
-                    session={session}
-                    slot={s}
-                    exercise={view.exercises.get(key)}
-                    exerciseKey={key}
-                    logs={view.logsBySlot.get(s.id) ?? emptyLogs}
-                    last={view.last.get(key) ?? null}
-                    week={week}
-                    planned={setsForWeek(s.sets, week, settings.extraSets)}
-                    restSeconds={restFor(s)}
-                    skipped={session.skipped.includes(s.id)}
-                    substitutedFrom={substituted ? s.name : null}
-                    prs={view.prs}
-                    loadStep={loadStepFor(key)}
-                    media={<ExerciseMedia exercise={view.exercises.get(key)} name={substituted ? (view.exercises.get(key)?.name ?? key) : s.name} className="mx-auto" />}
-                    onChecked={onChecked}
-                    onDetails={() => setDetailsFor({ slot: s, key })}
-                    onSubstitute={() => setSubstituteFor(s)}
-                    onClearSubstitution={() => void setSubstitution(session.id, s.id, null)}
-                  />
-                </Fragment>
-              );
-            })}
-          </div>
-        ))}
+      <div className="flex flex-col gap-3.5 px-3 pt-3" style={{ paddingBottom: footerHeight + 160 + keyboard }}>
+        {visibleSlots.map((s) => {
+          const key = keyFor(s);
+          const substituted = key !== s.exerciseKey;
+          return (
+            <div
+              key={s.id}
+              ref={(el) => {
+                if (el) cardRefs.current.set(s.id, el);
+                else cardRefs.current.delete(s.id);
+              }}
+              className="scroll-mt-24"
+            >
+              <ExerciseCard
+                session={session}
+                slot={s}
+                exercise={view.exercises.get(key)}
+                exerciseKey={key}
+                logs={view.logsBySlot.get(s.id) ?? emptyLogs}
+                last={view.last.get(key) ?? null}
+                week={week}
+                planned={setsForWeek(s.sets, week, settings.extraSets)}
+                restSeconds={s.restSeconds}
+                skipped={session.skipped.includes(s.id)}
+                substitutedFrom={substituted ? s.name : null}
+                prs={view.prs}
+                loadStep={loadStepFor(key)}
+                isCurrent={s.id === currentId}
+                media={<ExerciseMedia exercise={view.exercises.get(key)} name={substituted ? (view.exercises.get(key)?.name ?? key) : s.name} className="mx-auto" />}
+                onChecked={onChecked}
+                onDetails={() => setDetailsFor({ slot: s, key })}
+                onSubstitute={() => setSubstituteFor(s)}
+                onClearSubstitution={() => void setSubstitution(session.id, s.id, null)}
+              />
+            </div>
+          );
+        })}
 
         {[...view.orphanLogs.entries()].map(([key, logs]) => (
           <ExerciseCard
@@ -255,6 +270,7 @@ function SessionBody({ view }: { view: SessionView }) {
             substitutedFrom={null}
             prs={view.prs}
             loadStep={loadStepFor(key)}
+            isCurrent={false}
             media={<ExerciseMedia exercise={view.exercises.get(key)} name={view.exercises.get(key)?.name ?? key} />}
             onDetails={() => setDetailsFor({ slot: null, key })}
             onSubstitute={() => undefined}
@@ -262,16 +278,14 @@ function SessionBody({ view }: { view: SessionView }) {
           />
         ))}
 
-        {groups.length === 0 && view.orphanLogs.size === 0 && (
-          <EmptyState title="Nessun esercizio questa settimana" text="Aggiungi esercizi al giorno in Programma." />
-        )}
+        {visibleSlots.length === 0 && view.orphanLogs.size === 0 && <EmptyState title="Nessun esercizio questa settimana" text="Aggiungi esercizi al giorno in Programma." />}
       </div>
 
       <div
         className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[520px] px-3 pt-2 pb-[max(env(safe-area-inset-bottom),12px)]"
         style={{ transform: keyboard ? `translateY(-${keyboard}px)` : undefined }}
       >
-        <div aria-hidden className="pointer-events-none absolute inset-0 -top-6 bg-[linear-gradient(to_bottom,transparent,var(--bg)_40%)]" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 -top-8 bg-[linear-gradient(to_bottom,transparent,var(--bg)_55%)]" />
         <div className="relative flex flex-col gap-2">
           <RestTimerBar sessionId={session.id} />
           {!keyboard &&
@@ -280,7 +294,7 @@ function SessionBody({ view }: { view: SessionView }) {
                 Chiudi
               </Button>
             ) : (
-              <Button variant="primary" size="lg" block onClick={() => setFinishOpen(true)}>
+              <Button variant={allDone ? 'success' : 'primary'} size="lg" block className={cx(allDone && 'sheen')} onClick={() => setFinishOpen(true)}>
                 Termina allenamento
               </Button>
             ))}
@@ -291,18 +305,21 @@ function SessionBody({ view }: { view: SessionView }) {
         open={finishOpen}
         onClose={() => setFinishOpen(false)}
         session={session}
+        day={day}
         logs={allLogs}
         prs={view.prs}
         exercises={view.exercises}
         onFinish={(note) => void finish(note)}
         onDiscard={() => void discard()}
       />
+      <FinishSheet open={summaryOpen} onClose={() => setSummaryOpen(false)} mode="review" session={session} day={day} logs={allLogs} prs={view.prs} exercises={view.exercises} />
 
       <ActionSheet
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         title={day?.title ?? 'Allenamento'}
         actions={[
+          { label: 'Riepilogo e muscoli', icon: <PieChart size={20} />, onSelect: () => setSummaryOpen(true), description: 'Mappa dei muscoli di questo allenamento e della settimana' },
           { label: 'Nota dell’allenamento', icon: <StickyNote size={20} />, onSelect: () => setNoteOpen(true) },
           { label: 'Regole del programma', icon: <BookOpen size={20} />, onSelect: () => setRulesOpen(true) },
           { label: 'Elimina allenamento', icon: <Trash2 size={20} />, tone: 'danger', onSelect: () => setConfirmDiscard(true) },

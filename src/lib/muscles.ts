@@ -51,3 +51,33 @@ export const EQUIPMENT_LABELS: Record<string, string> = {
 export function equipmentLabel(e: string): string {
   return EQUIPMENT_LABELS[e] ?? e;
 }
+
+export type MuscleGroup = 'push' | 'pull' | 'legs' | 'core';
+
+const GROUPS: Record<MuscleKey, MuscleGroup> = {
+  chest: 'push',
+  'front-delts': 'push',
+  'side-delts': 'push',
+  triceps: 'push',
+  lats: 'pull',
+  'upper-back': 'pull',
+  'lower-back': 'pull',
+  'rear-delts': 'pull',
+  biceps: 'pull',
+  forearms: 'pull',
+  'forearm-flexors': 'pull',
+  'forearm-extensors': 'pull',
+  quads: 'legs',
+  hamstrings: 'legs',
+  glutes: 'legs',
+  'glute-medius': 'legs',
+  calves: 'legs',
+  abs: 'core',
+};
+
+/** Spinta / trazione / gambe / core: gives each muscle chip its colour. */
+export function muscleGroup(m: MuscleKey): MuscleGroup {
+  return GROUPS[m] ?? 'pull';
+}
+
+export const GROUP_LABELS: Record<MuscleGroup, string> = { push: 'Spinta', pull: 'Trazione', legs: 'Gambe', core: 'Core' };

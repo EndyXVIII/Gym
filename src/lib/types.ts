@@ -74,6 +74,7 @@ export interface Day extends SyncFields {
 
 export type SlotKind = 'compound' | 'isolation';
 
+/** Not used any more: exercises are done one at a time. Kept so old data and backups still load. */
 export interface Superset {
   group: string;
   role: 'a' | 'b';
@@ -95,7 +96,8 @@ export interface Slot extends SyncFields {
   restSeconds: number;
   /** The rest text as written in the program sheet ("1 min between arms"). */
   restText: string;
-  superset: Superset | null;
+  /** @deprecated always null for new data; migrateNoSupersets() clears old values. */
+  superset?: Superset | null;
   kind: SlotKind;
   note: string;
   demo: string;

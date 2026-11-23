@@ -118,7 +118,6 @@ export async function addSlot(dayKey: string, exercise: Exercise): Promise<Slot>
       rir: '0-1',
       restSeconds: 90,
       restText: '90 s',
-      superset: null,
       kind: 'isolation',
       note: '',
       demo: `https://www.youtube.com/results?search_query=${encodeURIComponent(`${exercise.name} proper form`)}`,
@@ -144,40 +143,6 @@ export async function deleteSlot(id: string): Promise<void> {
     if (!slot) return;
     await w.remove('slots', id);
     await renormalize(w, slot.dayKey);
-  });
-}
-
-/** Pairs a slot with the next one as a superset (a = this one, b = the next). */
-export async function pairWithNext(id: string): Promise<boolean> {
-  return action('Superserie creata', async (w) => {
-    const slot = await db.slots.get(id);
-    if (!slot) return false;
-    const stored = await daySlots(slot.dayKey);
-    const i = stored.findIndex((s) => s.id === id);
-    const next = stored[i + 1];
-    if (!next || slot.superset || next.superset) return false;
-    const group = newId();
-    const rest = next.restSeconds > 0 ? Math.min(next.restSeconds, 90) : 60;
-    const ordered = stored.map((s) =>
-      s.id === slot.id
-        ? { ...s, superset: { group, role: 'a' as const } }
-        : s.id === next.id
-          ? { ...s, superset: { group, role: 'b' as const }, restSeconds: rest }
-          : s,
-    );
-    await writeNormalized(w, stored, ordered);
-    return true;
-  });
-}
-
-/** Splits a superset: both exercises go back to their own rest. */
-export async function unpair(id: string): Promise<void> {
-  await action('Superserie separata', async (w) => {
-    const slot = await db.slots.get(id);
-    if (!slot?.superset) return;
-    const stored = await daySlots(slot.dayKey);
-    const ordered = stored.map((s) => (s.superset?.group === slot.superset!.group ? { ...s, superset: null, restSeconds: s.restSeconds || 90 } : s));
-    await writeNormalized(w, stored, ordered);
   });
 }
 

@@ -1,12 +1,17 @@
-import { memo } from 'react';
+import { memo, useId } from 'react';
 import { muscleLabel } from '../lib/muscles';
+import { formatSerie, HEAT_LEVELS } from '../lib/muscleStats';
 import type { MuscleKey } from '../lib/types';
 import { cx } from './ui';
 
 /*
  * Front and back silhouettes drawn for Scheda. Paths describe the figure's left
- * half (x 0-50) and are mirrored for the right half. Primary muscles use the
- * day's accent, secondary ones a dimmer accent, the rest stay neutral.
+ * half (x 0-50) and are mirrored for the right half.
+ *
+ * Two ways to colour it:
+ *  - "binary": the muscles of one exercise (primary in the accent, secondary dimmer);
+ *  - "heat": how much each muscle was trained, in 5 steps of ONE hue (--heat-1..5),
+ *    lighter = more serie on the dark theme, darker = more on the light theme.
  */
 
 type Region = { muscle: MuscleKey | null; d: string };
@@ -45,7 +50,9 @@ const BACK: Region[] = [
   { muscle: 'calves', d: 'M36.2,173.4 C33.6,180.6 34,189.6 36.8,196.6 C38.4,199.6 41.8,199.8 43.4,197 C45.6,190 46,181.6 44.8,174.4 C42.6,170.6 38.4,170.2 36.2,173.4 Z' },
 ];
 
-function regionFill(m: MuscleKey | null, primary: Set<MuscleKey>, secondary: Set<MuscleKey>): string {
+const BODY = 'color-mix(in srgb, var(--muted) 13%, var(--surface))';
+
+function binaryFill(m: MuscleKey | null, primary: Set<MuscleKey>, secondary: Set<MuscleKey>): string {
   if (m && primary.has(m)) return 'var(--accent)';
   if (m && secondary.has(m)) return 'color-mix(in srgb, var(--accent) 42%, var(--surface))';
   return 'color-mix(in srgb, var(--muted) 26%, var(--surface))';
@@ -61,65 +68,152 @@ function expand(list: readonly MuscleKey[]): Set<MuscleKey> {
   return s;
 }
 
-function Figure({ regions, primary, secondary, x }: { regions: Region[]; primary: Set<MuscleKey>; secondary: Set<MuscleKey>; x: number }) {
+interface FigureProps {
+  regions: Region[];
+  x: number;
+  fill: (m: MuscleKey | null) => string;
+  level?: (m: MuscleKey | null) => number;
+  glowId?: string;
+  selected?: MuscleKey | null;
+  onSelect?: (m: MuscleKey) => void;
+}
+
+function Figure({ regions, x, fill, level, glowId, selected, onSelect }: FigureProps) {
+  const ordered = selected ? [...regions.filter((r) => r.muscle !== selected), ...regions.filter((r) => r.muscle === selected)] : regions;
   const half = (
     <>
-      <path d={OUTLINE} fill="color-mix(in srgb, var(--muted) 12%, var(--surface))" />
-      {regions.map((r, i) => (
-        <path key={i} d={r.d} fill={regionFill(r.muscle, primary, secondary)} />
-      ))}
+      <path d={OUTLINE} fill={BODY} />
+      {glowId &&
+        ordered.map((r, i) =>
+          r.muscle && (level?.(r.muscle) ?? 0) >= 4 ? <path key={`g${i}`} d={r.d} fill={fill(r.muscle)} filter={`url(#${glowId})`} opacity={0.7} /> : null,
+        )}
+      {ordered.map((r, i) => {
+        const isSel = !!r.muscle && r.muscle === selected;
+        return (
+          <path
+            key={i}
+            d={r.d}
+            fill={fill(r.muscle)}
+            stroke={isSel ? 'var(--text)' : 'var(--map-stroke)'}
+            strokeWidth={isSel ? 1.4 : 0.6}
+            strokeLinejoin="round"
+            onClick={onSelect && r.muscle ? () => onSelect(r.muscle!) : undefined}
+            style={onSelect && r.muscle ? { cursor: 'pointer' } : undefined}
+          />
+        );
+      })}
     </>
   );
+  const skin = BODY;
   return (
     <g transform={`translate(${x},0)`}>
-      <ellipse cx={50} cy={20} rx={10.5} ry={12.6} fill="color-mix(in srgb, var(--muted) 12%, var(--surface))" />
-      <rect x={45.4} y={30} width={9.2} height={10} rx={3} fill="color-mix(in srgb, var(--muted) 12%, var(--surface))" />
+      <ellipse cx={50} cy={20} rx={10.5} ry={12.6} fill={skin} />
+      <rect x={45.4} y={30} width={9.2} height={10} rx={3} fill={skin} />
       {half}
       <g transform="translate(100,0) scale(-1,1)">{half}</g>
     </g>
   );
 }
 
-export const MuscleMap = memo(function MuscleMap({
-  primary,
-  secondary,
-  className,
-  showLegend = true,
-}: {
-  primary: readonly MuscleKey[];
-  secondary: readonly MuscleKey[];
+interface CommonProps {
   className?: string;
-  showLegend?: boolean;
-}) {
-  const p = expand(primary);
-  const s = expand(secondary.filter((m) => !primary.includes(m)));
-  const label = primary.length
-    ? `Mappa muscolare. Principali: ${primary.map(muscleLabel).join(', ')}${secondary.length ? `. Secondari: ${secondary.map(muscleLabel).join(', ')}` : ''}.`
-    : 'Mappa muscolare: muscoli non indicati.';
-  return (
-    <div className={cx('relative flex h-full w-full items-center justify-center', className)}>
-      <svg viewBox="0 0 220 222" role="img" aria-label={label} className="h-full max-h-full w-auto max-w-full">
-        <Figure regions={FRONT} primary={p} secondary={s} x={4} />
-        <Figure regions={BACK} primary={p} secondary={s} x={116} />
-        <text x={54} y={221} textAnchor="middle" fontSize={7.5} fill="var(--muted)" fontFamily="inherit">
-          fronte
-        </text>
-        <text x={166} y={221} textAnchor="middle" fontSize={7.5} fill="var(--muted)" fontFamily="inherit">
-          retro
-        </text>
-      </svg>
-      {showLegend && primary.length > 0 && (
+  /** Overrides the screen reader description. */
+  label?: string;
+}
+type BinaryProps = CommonProps & { heat?: undefined; primary: readonly MuscleKey[]; secondary: readonly MuscleKey[]; showLegend?: boolean };
+type HeatProps = CommonProps & {
+  /** Level 1..5 per muscle; missing = not trained. */
+  heat: Partial<Record<MuscleKey, number>>;
+  primary?: undefined;
+  secondary?: undefined;
+  selected?: MuscleKey | null;
+  onSelect?: (m: MuscleKey | null) => void;
+  showLegend?: undefined;
+};
+export type MuscleMapProps = BinaryProps | HeatProps;
+
+export const MuscleMap = memo(function MuscleMap(props: MuscleMapProps) {
+  const glowId = useId().replace(/:/g, '');
+  const { className } = props;
+  let fill: (m: MuscleKey | null) => string;
+  let level: ((m: MuscleKey | null) => number) | undefined;
+  let label: string;
+  let legend: React.ReactNode = null;
+  let selected: MuscleKey | null = null;
+  let onSelect: ((m: MuscleKey) => void) | undefined;
+
+  if (props.heat) {
+    const heat = props.heat;
+    level = (m) => (m ? (heat[m] ?? 0) : 0);
+    fill = (m) => `var(--heat-${Math.min(HEAT_LEVELS, level!(m))})`;
+    selected = props.selected ?? null;
+    onSelect = props.onSelect ? (m) => props.onSelect!(m === props.selected ? null : m) : undefined;
+    const trained = Object.keys(heat) as MuscleKey[];
+    label = props.label ?? (trained.length ? `Mappa muscolare. Muscoli allenati: ${trained.map(muscleLabel).join(', ')}.` : 'Mappa muscolare: nessun muscolo allenato.');
+  } else {
+    const p = expand(props.primary);
+    const s = expand(props.secondary.filter((m) => !props.primary.includes(m)));
+    fill = (m) => binaryFill(m, p, s);
+    label =
+      props.label ??
+      (props.primary.length
+        ? `Mappa muscolare. Principali: ${props.primary.map(muscleLabel).join(', ')}${props.secondary.length ? `. Secondari: ${props.secondary.map(muscleLabel).join(', ')}` : ''}.`
+        : 'Mappa muscolare: muscoli non indicati.');
+    if (props.showLegend !== false && props.primary.length > 0) {
+      legend = (
         <div className="absolute bottom-2 left-2 flex flex-col gap-1 text-[11px] text-muted" aria-hidden>
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-sm bg-accent" /> principali
           </span>
-          {secondary.length > 0 && (
+          {props.secondary.length > 0 && (
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-sm bg-[color-mix(in_srgb,var(--accent)_42%,var(--surface))]" /> secondari
             </span>
           )}
         </div>
-      )}
+      );
+    }
+  }
+
+  return (
+    <div className={cx('relative flex h-full w-full items-center justify-center', className)}>
+      <svg viewBox="0 0 220 226" role="img" aria-label={label} className="h-full max-h-full w-auto max-w-full overflow-visible">
+        {props.heat && (
+          <defs>
+            <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.4" />
+            </filter>
+          </defs>
+        )}
+        <Figure regions={FRONT} x={4} fill={fill} level={level} glowId={props.heat ? glowId : undefined} selected={selected} onSelect={onSelect} />
+        <Figure regions={BACK} x={116} fill={fill} level={level} glowId={props.heat ? glowId : undefined} selected={selected} onSelect={onSelect} />
+        <text x={54} y={224} textAnchor="middle" fontSize={7.5} fontWeight={600} fill="var(--muted)" fontFamily="inherit">
+          FRONTE
+        </text>
+        <text x={166} y={224} textAnchor="middle" fontSize={7.5} fontWeight={600} fill="var(--muted)" fontFamily="inherit">
+          RETRO
+        </text>
+      </svg>
+      {legend}
     </div>
   );
 });
+
+/** The five steps of the heat scale, with its end labels. `fullAt` = serie that fill the scale. */
+export function HeatLegend({ fullAt, unit = 'serie', className }: { fullAt: number; unit?: string; className?: string }) {
+  return (
+    <div className={cx('flex flex-col gap-1.5', className)}>
+      <div className="flex items-center gap-1" aria-hidden>
+        <span className="h-3 w-6 rounded-[5px]" style={{ background: 'var(--heat-0)' }} />
+        <span className="mx-1 text-[11px] text-muted">0</span>
+        {Array.from({ length: HEAT_LEVELS }, (_, i) => (
+          <span key={i} className="h-3 flex-1 rounded-[5px]" style={{ background: `var(--heat-${i + 1})` }} />
+        ))}
+        <span className="ml-1 text-[11px] text-muted tnum">{formatSerie(fullAt)}+</span>
+      </div>
+      <p className="text-[12px] text-muted">
+        Più intenso il colore, più {unit} per quel muscolo (scala fino a {formatSerie(fullAt)}). Una serie conta 1 per i muscoli principali e 0,5 per i secondari.
+      </p>
+    </div>
+  );
+}

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, SchedaDB, useDatabase } from './db';
 import { ensureSeeded } from './bootstrap';
-import { addDay, deleteDay, pairWithNext, reorderSlots, swapExercise, unpair, updateDay, updateSlot } from './programOps';
+import { addDay, deleteDay, reorderSlots, swapExercise, updateDay, updateSlot } from './programOps';
 import { lastPerformance } from './program';
 import { slotSeedId } from './seed';
 import { undoStore } from './repo';
@@ -76,29 +76,20 @@ describe('program editor', () => {
     expect((await last('lat-pulldown'))?.sets[0].weightKg).toBe(70);
   });
 
-  it('reordering keeps a superset pair together and relabels', async () => {
+  it('reordering renumbers the exercises 1..n', async () => {
     const ids = (await db.slots.where('dayKey').equals('upper-a').toArray()).sort((a, b) => a.position - b.position).map((s) => s.id);
-    // Drag 6b to the top.
+    // Drag the last exercise (Bayesian curl) to the top.
     await reorderSlots('upper-a', [ids[6], ...ids.slice(0, 6)]);
     expect(await labels('upper-a')).toEqual([
-      '1a:bayesian-cable-curl',
-      '1b:overhead-cable-triceps-extension',
+      '1:bayesian-cable-curl',
       '2:bench-press',
       '3:lat-pulldown',
       '4:chest-supported-row',
       '5:pec-deck',
       '6:cable-lateral-raise',
+      '7:overhead-cable-triceps-extension',
     ]);
-    const first = (await db.slots.get(ids[6]))!;
-    expect(first.restSeconds).toBe(0); // the new "a" goes straight to "b"
-  });
-
-  it('pairs and unpairs a superset', async () => {
-    await pairWithNext(slotSeedId('upper-a', '2'));
-    expect((await labels('upper-a')).map((l) => l.split(':')[0])).toEqual(['1', '2a', '2b', '3', '4', '5a', '5b']);
-    await unpair(slotSeedId('upper-a', '2'));
-    expect((await labels('upper-a')).map((l) => l.split(':')[0])).toEqual(['1', '2', '3', '4', '5', '6a', '6b']);
-    expect((await db.slots.get(slotSeedId('upper-a', '2')))!.restSeconds).toBe(90);
+    expect((await db.slots.get(ids[6]))!.restSeconds).toBe(60); // its rest does not change
   });
 
   it('adds a fifth day with a weekday, deletes it softly', async () => {

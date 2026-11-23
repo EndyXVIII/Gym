@@ -219,8 +219,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col px-6 pt-safe pb-[max(env(safe-area-inset-bottom),24px)]">
       <div className="mt-[12vh]">
-        <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" width={64} height={64} className="rounded-[16px]" />
-        <h1 className="mt-5 text-[32px] leading-tight font-bold tracking-tight">Accedi a Scheda</h1>
+        <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" width={64} height={64} className="rounded-[20px] shadow-[0_18px_40px_-14px_var(--upper)]" />
+        <h1 className="mt-5 text-[36px] leading-tight font-extrabold tracking-tight">Accedi a <span className="text-grad">Scheda</span></h1>
       </div>
       <div className="mt-3">{children}</div>
     </div>

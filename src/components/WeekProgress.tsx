@@ -18,22 +18,26 @@ export function WeekProgress({ week, completed }: { week: number; completed?: bo
           const n = i + 1;
           const done = completed || n < week;
           const current = !completed && n === week;
+          const deload = n === DELOAD_WEEK;
           return (
             <span
               key={n}
               className={cx(
-                'h-2 rounded-full transition-colors duration-200',
-                done && 'bg-[var(--upper)]',
-                current && 'bg-[var(--upper)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--upper)_28%,transparent)]',
-                !done && !current && (n === DELOAD_WEEK ? 'bg-[color-mix(in_srgb,var(--warning)_30%,var(--raised))]' : 'bg-raised'),
+                'h-3 rounded-full transition-all duration-300',
+                done && (deload ? 'bg-[linear-gradient(90deg,var(--warm),var(--warm-2))]' : 'bg-[linear-gradient(90deg,var(--upper),var(--upper-2))]'),
+                current &&
+                  (deload
+                    ? 'bg-[linear-gradient(90deg,var(--warm),var(--warm-2))] shadow-[0_0_0_3px_color-mix(in_srgb,var(--warm)_30%,transparent),0_6px_16px_-4px_var(--warm)]'
+                    : 'bg-[linear-gradient(90deg,var(--upper),var(--upper-2))] shadow-[0_0_0_3px_color-mix(in_srgb,var(--upper)_30%,transparent),0_6px_16px_-4px_var(--upper)]'),
+                !done && !current && (deload ? 'bg-[color-mix(in_srgb,var(--warm)_26%,var(--raised))]' : 'bg-raised'),
               )}
             />
           );
         })}
       </div>
-      <div className="mt-1.5 grid grid-cols-7 gap-1.5 text-center text-[11px] text-muted tnum" aria-hidden>
+      <div className="mt-2 grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold text-muted tnum" aria-hidden>
         {Array.from({ length: BLOCK_WEEKS }, (_, i) => (
-          <span key={i} className={cx(i + 1 === week && !completed && 'font-semibold text-ink', i + 1 === DELOAD_WEEK && 'text-warning-ink')}>
+          <span key={i} className={cx(i + 1 === week && !completed && 'text-ink', i + 1 === DELOAD_WEEK && 'text-warm-ink')}>
             {i + 1 === DELOAD_WEEK ? 'Scarico' : i + 1}
           </span>
         ))}

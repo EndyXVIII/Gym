@@ -1,9 +1,10 @@
-import { Check, Play, RotateCcw } from 'lucide-react';
+import { Check, Clock3, Play, RotateCcw } from 'lucide-react';
 import { useSettings } from '../../app/SettingsContext';
 import { formatRest, plural, weekdayName, capitalize } from '../../lib/format';
-import { dayPlanSummary, groupSlots, setsForWeek, targetRir } from '../../lib/program';
-import type { Day, Session, Slot } from '../../lib/types';
+import { dayPlanSummary, setsForWeek, targetRir } from '../../lib/program';
+import type { Day, Exercise, Session, Slot } from '../../lib/types';
 import { Sheet } from '../../components/Sheet';
+import { ExerciseThumb } from '../../components/ExerciseThumb';
 import { accentStyle, Button, cx } from '../../components/ui';
 
 /** Preview of a day with its exercises for this week, and the button to start it. */
@@ -12,6 +13,7 @@ export function DaySheet({
   onClose,
   week,
   slots,
+  exercises,
   done,
   inProgress,
   onStart,
@@ -21,6 +23,7 @@ export function DaySheet({
   onClose: () => void;
   week: number;
   slots: Slot[];
+  exercises: Map<string, Exercise> | undefined;
   done: Session | undefined;
   inProgress: Session | undefined;
   onStart: (d: Day) => void;
@@ -29,7 +32,7 @@ export function DaySheet({
   const settings = useSettings();
   if (!day) return null;
   const summary = dayPlanSummary(slots, week, settings.extraSets);
-  const groups = groupSlots(slots);
+  const ordered = [...slots].sort((a, b) => a.position - b.position);
   return (
     <Sheet
       open={!!day}
@@ -55,32 +58,33 @@ export function DaySheet({
       }
     >
       <div style={accentStyle(day.type)}>
-        <p className="text-[14px] text-muted tnum">
-          {capitalize(weekdayName(day.weekday))} · {plural(summary.exercises, 'esercizio', 'esercizi')} · {summary.sets} serie · ~{day.estimatedMinutes} min
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-muted tnum">
+          <span>{capitalize(weekdayName(day.weekday))}</span>
+          <span>{plural(summary.exercises, 'esercizio', 'esercizi')}</span>
+          <span>{summary.sets} serie</span>
+          <span className="inline-flex items-center gap-1">
+            <Clock3 size={14} aria-hidden /> ~{day.estimatedMinutes} min
+          </span>
         </p>
         <ol className="mt-3 flex flex-col gap-2">
-          {groups.map((g) => (
-            <li key={g[0].id} className={cx('rounded-2xl border border-line bg-raised', g.length > 1 && 'border-[color-mix(in_srgb,var(--accent)_35%,transparent)]')}>
-              {g.map((s, i) => {
-                const n = setsForWeek(s.sets, week, settings.extraSets);
-                return (
-                  <div key={s.id} className={cx('flex items-center gap-3 px-3 py-2.5', i > 0 && 'border-t border-line')}>
-                    <span className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] px-1 text-[13px] font-bold text-accent-ink tnum">
-                      {s.label}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className={cx('block truncate text-[15px] font-medium', n === 0 && 'text-muted')}>{s.name}</span>
-                      <span className="block text-[13px] text-muted tnum">
-                        {n === 0 ? 'dalla settimana 4' : `${n} × ${s.reps} · RIR ${targetRir(s.rir, s.kind, week)}`}
-                        {n > 0 && s.restSeconds > 0 && ` · ${formatRest(s.restSeconds)}`}
-                        {n > 0 && s.superset?.role === 'a' && ' · poi subito la b'}
-                      </span>
-                    </span>
-                  </div>
-                );
-              })}
-            </li>
-          ))}
+          {ordered.map((s) => {
+            const n = setsForWeek(s.sets, week, settings.extraSets);
+            return (
+              <li key={s.id} className="card-surface flex items-center gap-3 rounded-[20px] p-2.5">
+                <span className="relative">
+                  <ExerciseThumb exercise={exercises?.get(s.exerciseKey)} size={52} />
+                  <span className="grad-accent absolute -top-1.5 -left-1.5 flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12px] font-extrabold text-on-accent tnum">{s.label}</span>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className={cx('block truncate text-[15px] font-bold', n === 0 && 'text-muted')}>{s.name}</span>
+                  <span className="block text-[13px] text-muted tnum">
+                    {n === 0 ? 'dalla settimana 4' : `${n} × ${s.reps} · RIR ${targetRir(s.rir, s.kind, week)}`}
+                    {n > 0 && s.restSeconds > 0 && ` · ${formatRest(s.restSeconds)}`}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
         </ol>
       </div>
     </Sheet>

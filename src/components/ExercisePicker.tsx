@@ -4,6 +4,7 @@ import { Check, Plus, Search } from 'lucide-react';
 import { loadLibrary } from '../lib/queries';
 import { muscleLabel } from '../lib/muscles';
 import { Sheet } from './Sheet';
+import { ExerciseThumb } from './ExerciseThumb';
 import { cx, inputClass, Skeleton } from './ui';
 
 /** Pick a library exercise, or type the name of a new one. */
@@ -87,8 +88,9 @@ export function ExercisePicker({
                 onPick(e.key);
               }}
             >
+              <ExerciseThumb exercise={e} size={44} className="rounded-[12px]" />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[16px] font-medium">{e.name}</span>
+                <span className="block truncate text-[16px] font-semibold">{e.name}</span>
                 <span className="block truncate text-[13px] text-muted">{e.primary.map(muscleLabel).join(', ') || 'muscoli non indicati'}</span>
               </span>
               {e.key === currentKey && <Check size={18} className="shrink-0 text-success-ink" aria-label="attuale" />}

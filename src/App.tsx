@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Route, Router, Switch, useLocation } from 'wouter';
 import { ensureSeeded, requestPersistentStorage } from './lib/bootstrap';
+import { runMigrations } from './lib/migrations';
 import { installAudioUnlock } from './lib/feedback';
 import { SettingsProvider } from './app/SettingsContext';
 import { TabBar } from './components/TabBar';
 import { ToastHost } from './components/Toast';
-import { ScreenSkeleton } from './components/ui';
+import { cx, ScreenSkeleton } from './components/ui';
 import { UpdatePrompt } from './app/UpdatePrompt';
 import { TodayScreen } from './screens/today/TodayScreen';
 import { startSync } from './lib/syncRunner';
@@ -28,6 +29,7 @@ export default function App() {
 
   useEffect(() => {
     ensureSeeded()
+      .then(() => runMigrations())
       .then(() => setReady(true))
       .catch((e: unknown) => {
         console.warn(e);
@@ -84,7 +86,7 @@ function Shell() {
 
   return (
     <>
-      <main className={fullScreen ? '' : 'pb-[calc(88px+env(safe-area-inset-bottom))]'}>
+      <main key={path} className={cx('anim-fade', !fullScreen && 'pb-[calc(112px+env(safe-area-inset-bottom))]')}>
         <Suspense fallback={<ScreenSkeleton />}>
           <Switch>
             <Route path="/">
@@ -112,7 +114,7 @@ function Shell() {
         </Suspense>
       </main>
       {!fullScreen && <TabBar />}
-      <ToastHost bottom={inSession ? 168 : 80} />
+      <ToastHost bottom={inSession ? 168 : 100} />
       <UpdatePrompt />
     </>
   );

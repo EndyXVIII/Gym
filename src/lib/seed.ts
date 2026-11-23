@@ -45,6 +45,8 @@ export const SEED: SeedData = seedJson as unknown as SeedData;
 
 /** All seed records carry this updatedAt, older than any real edit, so edits always win. */
 export const SEED_TIME = '2026-11-16T00:00:00.000Z';
+/** Exercises that were the "a" of a superset get this rest now that they are done on their own. */
+export const FORMER_SUPERSET_REST_SECONDS = 90;
 export const SEED_VERSION = 1;
 
 export interface SeedRecords {
@@ -142,9 +144,10 @@ export function buildSeed(seed: SeedData = SEED): SeedRecords {
         repsMin: range.min,
         repsMax: range.max,
         rir: e.rir,
-        restSeconds: e.restSeconds,
-        restText: e.rest,
-        superset: e.superset ? { group: `${d.key}:${e.superset.group}`, role: e.superset.role } : null,
+        // I do not do supersets (busy gym): every exercise is separate and has its own rest.
+        restSeconds: e.superset && e.restSeconds === 0 ? FORMER_SUPERSET_REST_SECONDS : e.restSeconds,
+        restText: e.superset && e.restSeconds === 0 ? `${FORMER_SUPERSET_REST_SECONDS} s` : e.rest,
+        superset: null,
         kind: e.kind,
         note: e.note,
         demo: e.demo,
@@ -152,7 +155,7 @@ export function buildSeed(seed: SeedData = SEED): SeedRecords {
         singleArm: isSingleArmRest(e.rest),
       };
     });
-    // Labels come from the sheet; relabel() must agree with them.
+    // Labels are 1..n in order. Ids still come from the sheet's own labels ("6a"), so they never change.
     slots.push(...relabel(daySlots));
 
     // Week 1: one summary entry per exercise, dated on the day's weekday.

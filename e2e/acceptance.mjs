@@ -170,6 +170,17 @@ async function startDay(page, title) {
   await page.getByRole('button', { name: 'Termina allenamento' }).click();
   const summary = await page.getByRole('dialog', { name: 'Termina allenamento' }).innerText();
   ok('2c. Finish summary counts 22 sets', /Serie fatte\s*22/.test(summary.replace(/\n/g, ' ').replace(/\s+/g, ' ')) || summary.includes('22'), summary.split('\n').slice(0, 6).join(' / '));
+  // The summary shows the muscles of this workout on the body map.
+  const dlg = page.getByRole('dialog', { name: 'Termina allenamento' });
+  const mapLabel = await dlg.getByRole('img', { name: /^Mappa muscolare/ }).first().getAttribute('aria-label');
+  ok('9a. The summary has the muscle map with the trained muscles', !!mapLabel && /petto/.test(mapLabel) && /dorsali/.test(mapLabel) && /bicipiti/.test(mapLabel) && !/quadricipiti/.test(mapLabel), mapLabel?.slice(0, 80));
+  const listText = (await dlg.getByRole('list', { name: 'Serie per muscolo' }).first().innerText()).replace(/\s+/g, ' ');
+  ok('9b. The summary lists serie per muscle (petto 6 = 3 bench + 3 pec deck)', /petto 6/.test(listText), listText.slice(0, 90));
+  await dlg.getByRole('radio', { name: 'Settimana' }).click();
+  await page.waitForTimeout(400);
+  const weekText = (await dlg.innerText()).replace(/\s+/g, ' ');
+  ok('9c. The summary can switch to the whole week', /Settimana 2: 1 allenamento, 22 serie/.test(weekText), weekText.match(/Settimana 2: [^·]*/)?.[0]);
+  await dlg.getByRole('radio', { name: 'Questo allenamento' }).click();
   await page.getByRole('button', { name: 'Salva allenamento' }).click();
   await page.waitForURL(BASE + '/');
   const week = await page
@@ -177,6 +188,18 @@ async function startDay(page, title) {
     .then(() => true)
     .catch(() => false);
   ok('2d. Back on Oggi with 1/4 sessions this week', week);
+  // Oggi shows the week's muscles; the Storico tab has the week navigator.
+  const mini = await page.getByRole('img', { name: /Mappa dei muscoli allenati questa settimana/ }).count();
+  ok('9d. Oggi shows the muscle map of the week', mini === 1);
+  await page.getByRole('button', { name: /Muscoli della settimana: apri la mappa/ }).click();
+  await page.waitForURL(/\/storico/);
+  await page.waitForTimeout(500);
+  const wk2 = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+  ok('9e. Storico > Muscoli opens on week 2 with its numbers', /Settimana 2/.test(wk2) && /1 allenamento · 22 serie/.test(wk2) && /petto 6/.test(wk2) && /\+2/.test(wk2), wk2.match(/Settimana 2.{0,60}/)?.[0]);
+  await page.getByRole('radio', { name: /^Settimana 1/ }).click();
+  await page.waitForTimeout(500);
+  const wk1 = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+  ok('9f. Week 1 (from my seed numbers) shows quadricipiti 4 and petto 4', /quadricipiti 4/.test(wk1) && /petto 4/.test(wk1), wk1.match(/quadricipiti.{0,12}/)?.[0]);
   await context.close();
 }
 
@@ -267,6 +290,55 @@ async function startDay(page, title) {
   await page.waitForTimeout(2500);
   const remote = [...(server.tables.get('set_logs')?.values() ?? [])].filter((r) => r.data.doneAt && !r.data.isSummary);
   ok('6f. Back online: the set reached the server', remote.length === 1 && remote[0].data.weightKg === 20, `${remote.length} new set(s) on the server`);
+  await context.close();
+}
+
+/* ------------------------------------------------------------------ 8. no supersets, old data is migrated */
+{
+  const { context, page } = await newPage('2026-11-23T09:00:00+01:00');
+  // Make this device look like an old one: pairs with a/b labels and no rest on the "a".
+  await page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('scheda');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('slots', 'readwrite');
+          const store = tx.objectStore('slots');
+          store.getAll().onsuccess = (e) => {
+            for (const s of e.target.result) {
+              if (s.dayKey !== 'upper-a') continue;
+              if (s.exerciseKey === 'overhead-cable-triceps-extension') store.put({ ...s, label: '6a', superset: { group: 'upper-a:6', role: 'a' }, restSeconds: 0 });
+              if (s.exerciseKey === 'bayesian-cable-curl') store.put({ ...s, label: '6b', superset: { group: 'upper-a:6', role: 'b' } });
+            }
+          };
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+  );
+  await page.goto(`${BASE}/programma/upper-a`, { waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const rows = (await page.locator('ol li').allInnerTexts()).map((t) => t.replace(/\s+/g, ' '));
+  ok('8a. Old a/b labels become 6 and 7 after the update', rows.length === 7 && /^6 .*Overhead cable triceps/.test(rows[5]) && /^7 .*Bayesian/.test(rows[6]), `${rows[5]?.slice(0, 40)} | ${rows[6]?.slice(0, 40)}`);
+  ok('8b. The old "a" exercise now has a rest (1:30), not "subito la b"', /1:30/.test(rows[5]) && !/subito/.test(rows[5]), rows[5]?.slice(-40));
+  const bodyProgram = (await page.locator('body').innerText()).toLowerCase();
+  ok('8c. Programma never says "superserie"', !bodyProgram.includes('superserie') && !bodyProgram.includes('poi subito'));
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Inizia', exact: true }).click();
+  await page.waitForURL(/\/sessione\//);
+  await page.waitForTimeout(500);
+  const bodySession = (await page.locator('body').innerText()).toLowerCase();
+  ok('8d. The session never says "superserie" or "poi subito la b"', !bodySession.includes('superserie') && !bodySession.includes('poi subito'));
+  // checking a set of the former "a" exercise starts its own rest timer (it was 0 before)
+  const card = page.getByRole('article', { name: /^Overhead cable triceps/ });
+  await card.scrollIntoViewIfNeeded();
+  await card.getByRole('button', { name: /^Segna serie 1 come fatta/ }).click();
+  await page.waitForTimeout(300);
+  const timer = await page.getByRole('timer').getAttribute('aria-label');
+  ok('8e. The former "a" exercise starts a 1:30 rest by itself', timer === 'Recupero: 1:30', timer ?? 'no timer');
   await context.close();
 }
 

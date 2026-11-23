@@ -1,72 +1,132 @@
 @import 'tailwindcss';
 
 /* ------------------------------------------------------------------ tokens
-   Dark (OLED) is the main design. Light is available, and "system" follows iOS. */
+   Dark (OLED) is the main design, light is available, "system" follows iOS.
+   Upper days are blue -> violet, lower days green -> teal; warm tones (amber, pink)
+   are for records, the deload and celebrations. */
 :root {
   color-scheme: dark;
-  --bg: #0b0f14;
-  --surface: #121821;
-  --raised: #1a2230;
-  --border: #243044;
-  --text: #e8eef6;
-  --muted: #9aa7b8;
-  --upper: #4c8dff;
-  --lower: #34c48b;
-  --upper-ink: #6ea3ff;
-  --lower-ink: #3fd197;
-  --success: #34c48b;
-  --success-ink: #3fd197;
-  --warning: #f5b94c;
-  --warning-ink: #f5b94c;
-  --danger: #ff6b6b;
-  --danger-ink: #ff7b7b;
-  --on-accent: #0b0f14;
-  --focus: #8ab4ff;
-  --scrim: rgb(3 6 10 / 0.72);
-  --tabbar: rgb(11 15 20 / 0.82);
-  --shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  --bg: #090d16;
+  --surface: #121a29;
+  --raised: #1b2536;
+  --border: #283550;
+  --text: #f3f7fd;
+  --muted: #a0b0c8;
+
+  --upper: #4f8cff;
+  --upper-2: #8a6bff;
+  --upper-ink: #7faaff;
+  --lower: #26d69b;
+  --lower-2: #19b8d1;
+  --lower-ink: #4be3af;
+  --warm: #ffb02e;
+  --warm-2: #ff7a3d;
+  --warm-ink: #ffc25a;
+  --pink: #ff5c9a;
+  --pink-2: #b466ff;
+  --pink-ink: #ff86b4;
+  --violet-ink: #b19cff;
+  --success: #2edb9a;
+  --success-ink: #4be3af;
+  --warning: #ffb02e;
+  --warning-ink: #ffc25a;
+  --danger: #ff6b7d;
+  --danger-ink: #ff8a98;
+  --on-accent: #07111f;
+  --focus: #9dbbff;
+  --scrim: rgb(3 6 12 / 0.72);
+  --glass: rgb(18 26 41 / 0.78);
+  --shadow: 0 18px 44px -12px rgb(0 0 0 / 0.6);
+  --ambient: 1;
+
+  /* muscle groups (chips) */
+  --push: #ff8a5b;
+  --push-ink: #ffa07a;
+  --pull: #5fa0ff;
+  --pull-ink: #86b8ff;
+  --legs: #2edb9a;
+  --legs-ink: #5be8b2;
+  --core: #ffc247;
+  --core-ink: #ffd27a;
+
+  /* heat map: ONE hue (orange), more serie = lighter on the dark theme */
+  --heat-0: color-mix(in srgb, var(--muted) 20%, var(--surface));
+  --heat-1: #8b3e09;
+  --heat-2: #b85207;
+  --heat-3: #e26b1b;
+  --heat-4: #ff8739;
+  --heat-5: #ffa863;
+  --map-stroke: var(--surface);
+
   --accent: var(--upper);
+  --accent-2: var(--upper-2);
   --accent-ink: var(--upper-ink);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-    color-scheme: light;
-    --bg: #f2f4f8;
-    --surface: #ffffff;
-    --raised: #e9edf3;
-    --border: #d3dae4;
-    --text: #0e1520;
-    --muted: #536072;
-    --upper-ink: #1a52bd;
-    --lower-ink: #0b6644;
-    --success-ink: #0b6644;
-    --warning-ink: #8a5a00;
-    --danger-ink: #c0262d;
-    --focus: #1f5fd6;
-    --scrim: rgb(14 21 32 / 0.45);
-    --tabbar: rgb(255 255 255 / 0.86);
-    --shadow: 0 10px 30px rgb(14 21 32 / 0.12);
-  }
+  color-scheme: light;
+  --bg: #f2f5fc;
+  --surface: #ffffff;
+  --raised: #e8edf8;
+  --border: #d5dcec;
+  --text: #0d1526;
+  --muted: #4f5f7a;
+  --upper-ink: #1b4fd1;
+  --lower-ink: #066a4a;
+  --warm-ink: #8f4f00;
+  --pink-ink: #b4155a;
+  --violet-ink: #5b3cd1;
+  --success-ink: #066a4a;
+  --warning-ink: #8f4f00;
+  --danger-ink: #c0262d;
+  --focus: #1b4fd1;
+  --scrim: rgb(13 21 38 / 0.45);
+  --glass: rgb(255 255 255 / 0.82);
+  --shadow: 0 18px 44px -14px rgb(13 21 38 / 0.22);
+  --ambient: 0.55;
+  --push-ink: #ad3f14;
+  --pull-ink: #1a56c4;
+  --legs-ink: #066a4a;
+  --core-ink: #7f5800;
+  --heat-1: #ffc6a4;
+  --heat-2: #fda578;
+  --heat-3: #e87e42;
+  --heat-4: #cd5800;
+  --heat-5: #a43900;
+}
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f2f4f8;
+  --bg: #f2f5fc;
   --surface: #ffffff;
-  --raised: #e9edf3;
-  --border: #d3dae4;
-  --text: #0e1520;
-  --muted: #536072;
-  --upper-ink: #1a52bd;
-  --lower-ink: #0b6644;
-  --success-ink: #0b6644;
-  --warning-ink: #8a5a00;
+  --raised: #e8edf8;
+  --border: #d5dcec;
+  --text: #0d1526;
+  --muted: #4f5f7a;
+  --upper-ink: #1b4fd1;
+  --lower-ink: #066a4a;
+  --warm-ink: #8f4f00;
+  --pink-ink: #b4155a;
+  --violet-ink: #5b3cd1;
+  --success-ink: #066a4a;
+  --warning-ink: #8f4f00;
   --danger-ink: #c0262d;
-  --focus: #1f5fd6;
-  --scrim: rgb(14 21 32 / 0.45);
-  --tabbar: rgb(255 255 255 / 0.86);
-  --shadow: 0 10px 30px rgb(14 21 32 / 0.12);
+  --focus: #1b4fd1;
+  --scrim: rgb(13 21 38 / 0.45);
+  --glass: rgb(255 255 255 / 0.82);
+  --shadow: 0 18px 44px -14px rgb(13 21 38 / 0.22);
+  --ambient: 0.55;
+  --push-ink: #ad3f14;
+  --pull-ink: #1a56c4;
+  --legs-ink: #066a4a;
+  --core-ink: #7f5800;
+  --heat-1: #ffc6a4;
+  --heat-2: #fda578;
+  --heat-3: #e87e42;
+  --heat-4: #cd5800;
+  --heat-5: #a43900;
 }
 
 @theme inline {
@@ -79,17 +139,22 @@
   --color-upper: var(--upper);
   --color-lower: var(--lower);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-accent-ink: var(--accent-ink);
   --color-on-accent: var(--on-accent);
   --color-success: var(--success);
   --color-success-ink: var(--success-ink);
   --color-warning: var(--warning);
   --color-warning-ink: var(--warning-ink);
-  --color-danger-ink: var(--danger-ink);
   --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-warm: var(--warm);
+  --color-warm-ink: var(--warm-ink);
+  --color-pink: var(--pink);
+  --color-pink-ink: var(--pink-ink);
+  --color-violet-ink: var(--violet-ink);
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
-  --radius-card: 18px;
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -103,7 +168,7 @@
   body {
     margin: 0;
     min-height: 100dvh;
-    background: var(--bg);
+    background: transparent;
     color: var(--text);
     font-family: var(--font-sans);
     font-size: 15px;
@@ -117,6 +182,19 @@
     margin: 0 auto;
     min-height: 100dvh;
     position: relative;
+  }
+  /* Ambient colour behind everything: soft blue/violet glows, a hint of teal at the bottom. */
+  #root::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--ambient);
+    background:
+      radial-gradient(75% 36% at 92% -4%, color-mix(in srgb, var(--upper-2) 30%, transparent), transparent 72%),
+      radial-gradient(68% 34% at 4% 2%, color-mix(in srgb, var(--upper) 26%, transparent), transparent 72%),
+      radial-gradient(90% 38% at 50% 110%, color-mix(in srgb, var(--lower) 14%, transparent), transparent 72%);
   }
   button {
     cursor: pointer;
@@ -149,11 +227,11 @@
 /* Illustrations come on a light solid background: a little dimmer on the dark theme. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .dark-dim {
-    filter: brightness(0.88) saturate(0.95);
+    filter: brightness(0.9) saturate(1.05);
   }
 }
 :root[data-theme='dark'] .dark-dim {
-  filter: brightness(0.88) saturate(0.95);
+  filter: brightness(0.9) saturate(1.05);
 }
 
 /* ------------------------------------------------------------------ helpers */
@@ -175,9 +253,10 @@
     transform 150ms var(--ease-out-soft),
     background-color 180ms ease-out,
     border-color 180ms ease-out,
-    opacity 180ms ease-out;
+    opacity 180ms ease-out,
+    box-shadow 180ms ease-out;
   &:active:not(:disabled) {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 }
 
@@ -188,97 +267,149 @@
   }
 }
 
+/* The accent of the current day, as a gradient. */
+@utility grad-accent {
+  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+@utility grad-accent-soft {
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent-2) 14%, transparent));
+}
+@utility glow-accent {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 14px 34px -14px color-mix(in srgb, var(--accent) 85%, transparent);
+}
+@utility text-grad {
+  background-image: linear-gradient(90deg, var(--accent-ink), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* Cards: the surface with a faint top light, so they don't look flat. */
+@utility card-surface {
+  background-color: var(--surface);
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--text) 5%, transparent), transparent 46%);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent) inset;
+}
+
+/* The big coloured card (today's workout, summaries). */
+@utility hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background:
+    radial-gradient(120% 95% at 100% 0%, color-mix(in srgb, var(--accent-2) 42%, transparent), transparent 62%),
+    radial-gradient(90% 70% at 0% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    linear-gradient(160deg, color-mix(in srgb, var(--accent) 26%, var(--surface)), var(--surface) 78%);
+}
+
+/* Icon tiles: a vivid gradient square with a dark icon. */
+.tile {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-accent);
+  background-image: linear-gradient(135deg, var(--t1), var(--t2));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.38),
+    0 8px 18px -10px var(--t1);
+}
+.tile-blue { --t1: var(--upper); --t2: var(--upper-2); }
+.tile-green { --t1: var(--lower); --t2: var(--lower-2); }
+.tile-amber { --t1: var(--warm); --t2: var(--warm-2); }
+.tile-pink { --t1: var(--pink); --t2: var(--pink-2); }
+.tile-cyan { --t1: #22d3ee; --t2: #4f8cff; }
+.tile-slate { --t1: #9db0cd; --t2: #6b7fa3; }
+
 .skeleton {
   background: linear-gradient(90deg, var(--surface) 0%, var(--raised) 50%, var(--surface) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: 14px;
+  border-radius: 16px;
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
-
 @keyframes pop {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.16);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
 }
-
 @keyframes ring {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 14px transparent;
-  }
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent); }
+  100% { box-shadow: 0 0 0 16px transparent; }
 }
-
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-
 @keyframes slide-up {
-  from {
-    transform: translateY(24px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
-
 @keyframes sheet-up {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
-
 @keyframes flash {
-  0% {
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes confetti {
+  0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate3d(var(--dx), 340px, 0) rotate(var(--rot)); opacity: 0; }
+}
+@keyframes sheen {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  60%, 100% { transform: translateX(260%) skewX(-18deg); }
+}
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  50% { box-shadow: 0 0 0 10px transparent; }
 }
 
-.anim-pop {
-  animation:
-    pop 220ms var(--ease-out-soft),
-    ring 520ms ease-out;
+.anim-pop { animation: pop 240ms var(--ease-out-soft), ring 560ms ease-out; }
+.anim-fade { animation: fade-in 200ms ease-out; }
+.anim-slide-up { animation: slide-up 240ms var(--ease-out-soft); }
+.anim-sheet { animation: sheet-up 240ms var(--ease-out-soft); }
+.anim-breathe { animation: breathe 2s ease-in-out infinite; }
+
+/* A moving sheen across a button: "this is the next thing to do". */
+.sheen {
+  position: relative;
+  overflow: hidden;
 }
-.anim-fade {
-  animation: fade-in 180ms ease-out;
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.38), transparent);
+  animation: sheen 3.2s ease-in-out infinite;
+  pointer-events: none;
 }
-.anim-slide-up {
-  animation: slide-up 220ms var(--ease-out-soft);
-}
-.anim-sheet {
-  animation: sheet-up 220ms var(--ease-out-soft);
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: confetti var(--dur) cubic-bezier(0.2, 0.7, 0.3, 1) var(--delay) both;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -289,5 +420,8 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .confetti-piece {
+    display: none;
   }
 }

@@ -198,7 +198,7 @@ export function weekRule(week: number): WeekRule {
 export const PROGRAM_RULES: { title: string; text: string }[] = [
   { title: 'Intensità', text: 'RIR = ripetizioni in riserva. 0 = non potevi farne un’altra. I multiarticolari si fermano a 1-2 RIR, gli isolamenti arrivano a 0. L’ultima ripetizione deve essere sempre una vera fatica.' },
   { title: 'Progressione', text: 'Parti dal fondo del range di ripetizioni e aggiungi ripetizioni a ogni sessione. Quando tutte le serie arrivano in cima al range, aggiungi il salto di carico più piccolo.' },
-  { title: 'Recupero', text: 'Recupero completo sui multiarticolari. Gli esercizi a/b sono superserie: fai la a, passa subito alla b, poi riposa 1 minuto. Abbinano muscoli diversi, quindi non perdi nulla.' },
+  { title: 'Recupero', text: 'Recupero completo sui multiarticolari. Per gli altri esercizi usa il recupero indicato: ogni esercizio ha il suo timer.' },
   { title: 'Riscaldamento', text: '2-3 serie più leggere prima del primo esercizio di ogni gruppo muscolare. Non contano come serie.' },
   { title: 'Range di ripetizioni', text: 'Multiarticolari 6-10, isolamenti 8-12, alzate laterali e deltoidi posteriori 10-15.' },
   { title: 'Settimana 1', text: 'Impara gli esercizi. Lascia una ripetizione in più in riserva rispetto al RIR indicato.' },
@@ -208,84 +208,20 @@ export const PROGRAM_RULES: { title: string; text: string }[] = [
   { title: 'Settimana 7', text: 'Scarico: metà delle serie, stessi carichi, circa 4 RIR. Poi si ricomincia.' },
 ];
 
-/* ------------------------------------------------------------------ supersets and labels */
+/* ------------------------------------------------------------------ order and labels */
 
 export function isSingleArmRest(restText: string | null | undefined): boolean {
   return !!restText && /between arms/i.test(restText);
 }
 
-/**
- * Recomputes labels from the order: standalone slots get "1", "2"...; a superset
- * pair shares a number with "a" and "b". Returns slots in order with new labels
- * (and superset groups renumbered to match).
- */
-export function relabel<T extends Pick<Slot, 'id' | 'position' | 'label' | 'superset'>>(slots: readonly T[]): T[] {
-  const sorted = [...slots].sort((a, b) => a.position - b.position);
-  const out: T[] = [];
-  let n = 0;
-  const groupNumber = new Map<string, number>();
-  for (const s of sorted) {
-    if (s.superset) {
-      let num = groupNumber.get(s.superset.group);
-      if (num === undefined) {
-        n += 1;
-        num = n;
-        groupNumber.set(s.superset.group, num);
-      }
-      out.push({ ...s, label: `${num}${s.superset.role}` });
-    } else {
-      n += 1;
-      out.push({ ...s, label: String(n) });
-    }
-  }
-  return out;
+/** Labels follow the order: "1", "2", "3"... (every exercise is done on its own, no supersets). */
+export function relabel<T extends Pick<Slot, 'id' | 'position' | 'label'>>(slots: readonly T[]): T[] {
+  return [...slots].sort((a, b) => a.position - b.position).map((s, i) => ({ ...s, label: String(i + 1) }));
 }
 
-/**
- * After a reorder: keeps each superset pair adjacent (the partner follows the
- * first member), gives roles by order (first = a, second = b; "a" goes straight
- * to "b", so its rest is 0), renumbers positions and labels.
- */
-export function normalizeOrder<T extends Pick<Slot, 'id' | 'position' | 'label' | 'superset' | 'restSeconds'>>(ordered: readonly T[]): T[] {
-  const out: T[] = [];
-  const placed = new Set<string>();
-  for (const s of ordered) {
-    if (placed.has(s.id)) continue;
-    out.push(s);
-    placed.add(s.id);
-    if (s.superset) {
-      const partner = ordered.find((x) => x.id !== s.id && x.superset?.group === s.superset!.group && !placed.has(x.id));
-      if (partner) {
-        out.push(partner);
-        placed.add(partner.id);
-      }
-    }
-  }
-  const withRoles = out.map((s, i) => {
-    if (!s.superset) return { ...s, position: i + 1 };
-    const members = out.filter((x) => x.superset?.group === s.superset!.group);
-    if (members.length < 2) return { ...s, superset: null, position: i + 1 }; // lone half: no longer a superset
-    const role: 'a' | 'b' = members[0].id === s.id ? 'a' : 'b';
-    const pairRest = Math.max(...members.map((m) => m.restSeconds)) || 60;
-    return { ...s, position: i + 1, superset: { group: s.superset.group, role }, restSeconds: role === 'a' ? 0 : pairRest };
-  });
-  return relabel(withRoles);
-}
-
-/** Groups consecutive superset members, in order: [[1], [2], [6a, 6b]]. */
-export function groupSlots<T extends Pick<Slot, 'superset' | 'position'>>(slots: readonly T[]): T[][] {
-  const sorted = [...slots].sort((a, b) => a.position - b.position);
-  const groups: T[][] = [];
-  for (const s of sorted) {
-    const last = groups[groups.length - 1];
-    if (s.superset && last && last[0].superset && last[0].superset.group === s.superset.group) {
-      last.push(s);
-    } else {
-      groups.push([s]);
-    }
-  }
-  for (const g of groups) g.sort((a, b) => (a.superset?.role ?? '').localeCompare(b.superset?.role ?? ''));
-  return groups;
+/** After a reorder: positions 1..n in the given order, labels to match. */
+export function normalizeOrder<T extends Pick<Slot, 'id' | 'position' | 'label'>>(ordered: readonly T[]): T[] {
+  return relabel(ordered.map((s, i) => ({ ...s, position: i + 1 })));
 }
 
 /* ------------------------------------------------------------------ history */

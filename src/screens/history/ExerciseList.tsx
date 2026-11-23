@@ -8,6 +8,7 @@ import { displayReps } from '../../lib/program';
 import { formatDateShort, formatKg } from '../../lib/format';
 import type { MuscleKey } from '../../lib/types';
 import { accentStyle, Badge, cx, EmptyState, inputClass, Skeleton } from '../../components/ui';
+import { ExerciseThumb } from '../../components/ExerciseThumb';
 import { Sparkline } from '../../components/Sparkline';
 
 /** History by exercise: search, filter by muscle, best set, sparkline, PR badge. */
@@ -65,11 +66,12 @@ export function ExerciseList() {
               <button
                 type="button"
                 onClick={() => navigate(`/storico/esercizio/${encodeURIComponent(e.exercise.key)}`)}
-                className="pressable flex min-h-[68px] w-full items-center gap-3 rounded-[18px] border border-line bg-surface px-3 py-2 text-left"
+                className="pressable card-surface flex min-h-[76px] w-full items-center gap-3 rounded-[22px] px-3 py-2 text-left"
               >
+                <ExerciseThumb exercise={e.exercise} size={52} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="truncate text-[16px] font-semibold">{e.exercise.name}</span>
+                    <span className="truncate text-[16px] font-bold">{e.exercise.name}</span>
                     {e.recentPr && <Badge>PR</Badge>}
                   </span>
                   <span className="block truncate text-[13px] text-muted tnum">
@@ -84,7 +86,7 @@ export function ExerciseList() {
                     {e.days.length === 0 && ' · fuori programma'}
                   </span>
                 </span>
-                <Sparkline values={e.trend} label={`Andamento del carico migliore: ${e.trend.map((v) => formatKg(v)).join(', ')} kg`} />
+                <Sparkline values={e.trend} width={56} label={`Andamento del carico migliore: ${e.trend.map((v) => formatKg(v)).join(', ')} kg`} />
                 <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
               </button>
             </li>
@@ -101,7 +103,7 @@ function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => voi
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={cx('pressable min-h-12 shrink-0 rounded-full border px-4 text-[14px] whitespace-nowrap', on ? 'border-transparent bg-ink font-semibold text-bg' : 'border-line bg-surface text-muted')}
+      className={cx('pressable min-h-12 shrink-0 rounded-full border px-4 text-[14px] font-semibold whitespace-nowrap', on ? 'grad-accent border-transparent text-on-accent' : 'card-surface text-muted')}
     >
       {children}
     </button>

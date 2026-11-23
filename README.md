@@ -4,9 +4,9 @@ A private workout tracker for one person: my upper/lower program, the weights I 
 Mobile-first installable web app (PWA), Italian UI, offline-first, synced to my own Supabase project.
 
 - **Oggi**: this week (Settimana *n* di 7, deload in week 7), today's workout, rest days, sessions done this week, resume.
-- **Sessione**: one card per exercise with picture, "Ultima volta" from the most recent log of that exercise on any day, progression hint, set rows (weight − / +, reps, one tap to check), supersets, warm-ups, skip, "Sostituisci per oggi", undo, rest timer, screen kept awake, finish summary with records.
-- **Programma**: days, weekdays, exercises, sets/reps/RIR/rest/notes, drag to reorder, supersets, swap exercises (history kept).
-- **Storico**: the Excel-like grid (weeks 1-7, top set per cell, tap to edit), history by exercise (search, muscle filter, best set, sparkline, PR badges), session list.
+- **Sessione**: one card per exercise with picture, "Ultima volta" from the most recent log of that exercise on any day, progression hint, set rows (weight − / +, reps, one tap to check), warm-ups, skip, "Sostituisci per oggi", undo, rest timer (every exercise has its own), screen kept awake. A finished exercise folds up and the next one is highlighted. At the end: a summary with totals, records and the **body map of the muscles trained** (this workout or the whole week so far).
+- **Programma**: days, weekdays, exercises with pictures, sets/reps/RIR/rest/notes, drag to reorder, swap exercises (history kept). No supersets: every exercise is done on its own, numbered 1..n.
+- **Storico**: the Excel-like grid (weeks 1-7, top set per cell, a green arrow when you improved, tap to edit), history by exercise (search, muscle filter, best set, sparkline, PR badges), **Muscoli** (pick week 1-7 and see which muscles were hit on the body map, with serie per muscle, the change against the week before and the muscles not trained), session list.
 - **Impostazioni**: name, block start and week override, extra sets, load step, sound, theme, JSON/CSV export, JSON import, sync, sign out, credits.
 
 React 19 + TypeScript + Vite + Tailwind CSS 4, Lucide icons, Dexie (IndexedDB) on the device, Supabase (Postgres, Auth, Storage) in the background. No analytics, no trackers, no ads, no third-party scripts.
@@ -99,11 +99,15 @@ Tips: the rest-timer beep follows the ring/silent switch (it mixes with your mus
 
 ## How the data works
 
-- IndexedDB (Dexie) on the device is the source of truth. Every record has a UUID, `updatedAt` and a soft `deletedAt`; nothing is ever hard-deleted.
+- IndexedDB (Dexie) on the device is the source of truth. Updates fix existing data by themselves (e.g. old a/b superset labels become plain 1..n exercises; see `src/lib/migrations.ts`). Every record has a UUID, `updatedAt` and a soft `deletedAt`; nothing is ever hard-deleted.
 - Sync: push records changed locally, pull rows changed on the server after a cursor (server time). Conflicts: last write wins on `updatedAt`, on the client and in a Postgres trigger, so an older copy can never overwrite a newer one.
 - Seed records (program + week 1) have deterministic ids (UUID v5 of keys like `slot:upper-a:6a`) and an old timestamp: importing the seed on a second device creates no duplicates and never overwrites real edits.
 - Photos/videos: shrunk to 1200 px, stored in IndexedDB and in the private `media` bucket under your user id.
 - History belongs to the exercise, not to the slot: "Ultima volta" and the history come from the latest log of that exercise on any day.
+
+## Muscle map
+
+Every working set done counts 1 for the exercise's primary muscles and 0.5 for its secondary ones (warm-ups never count; see `src/lib/muscleStats.ts`). The map colours each muscle in five steps of one hue (more serie = more intense) on a fixed scale (6 serie for a workout, 12 for a week), so weeks can be compared. The list under the map is the same data as numbers.
 
 ## Exercise images
 

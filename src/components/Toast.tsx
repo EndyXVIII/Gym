@@ -51,8 +51,8 @@ export function ToastHost({ bottom = 88 }: { bottom?: number }) {
         role="status"
         aria-live="polite"
         className={cx(
-          'anim-slide-up pointer-events-auto flex min-h-12 w-full max-w-[488px] items-center gap-3 rounded-2xl border px-4 py-2 shadow-[var(--shadow)]',
-          t.tone === 'error' ? 'border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-raised' : 'border-line bg-raised',
+          'anim-slide-up pointer-events-auto flex min-h-12 w-full max-w-[488px] items-center gap-3 rounded-[20px] border px-4 py-2 shadow-[var(--shadow)] backdrop-blur-xl',
+          t.tone === 'error' ? 'border-[color-mix(in_srgb,var(--danger)_50%,transparent)] bg-raised' : t.tone === 'success' ? 'border-[color-mix(in_srgb,var(--success)_50%,transparent)] bg-raised' : 'border-line bg-raised',
         )}
       >
         <p className={cx('min-w-0 flex-1 text-[15px]', t.tone === 'error' ? 'text-danger-ink' : 'text-ink')}>{t.text}</p>

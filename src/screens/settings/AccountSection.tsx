@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { LogIn, LogOut, RefreshCw } from 'lucide-react';
+import { Cloud, LogIn, LogOut, RefreshCw } from 'lucide-react';
 import { getSupabase, supabaseConfigured } from '../../lib/supabase';
 import { runSync } from '../../lib/syncRunner';
 import { syncLabel, useSyncState, SyncDot } from '../../components/SyncDot';
@@ -39,7 +39,7 @@ export function AccountSection() {
   const [confirmOut, setConfirmOut] = useState(false);
 
   return (
-    <Section title="Sincronizzazione">
+    <Section title="Sincronizzazione" icon={<Cloud size={16} />} tone="green">
       <Row>
         <div className="flex items-center gap-3">
           <SyncDot />

@@ -13,11 +13,14 @@ export function RulesSheet({ open, onClose, week }: { open: boolean; onClose: ()
           return (
             <li
               key={r.title}
-              className={cx('rounded-2xl border px-4 py-3', current ? 'border-[color-mix(in_srgb,var(--upper)_55%,transparent)] bg-[color-mix(in_srgb,var(--upper)_10%,var(--surface))]' : 'border-line bg-raised')}
+              className={cx(
+                'rounded-[20px] border px-4 py-3',
+                current ? 'border-[color-mix(in_srgb,var(--upper)_60%,transparent)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--upper)_16%,var(--surface)),color-mix(in_srgb,var(--upper-2)_10%,var(--surface)))]' : 'border-line bg-raised',
+              )}
             >
-              <p className="text-[15px] font-semibold">
+              <p className="text-[15px] font-bold">
                 {r.title}
-                {current && <span className="ml-2 text-[12px] font-semibold text-[var(--upper-ink)] uppercase">questa settimana</span>}
+                {current && <span className="eyebrow ml-2 text-[11px] text-[var(--upper-ink)]">questa settimana</span>}
               </p>
               <p className="mt-1 text-[14px] leading-relaxed text-muted">{r.text}</p>
             </li>

@@ -1,11 +1,14 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { Check, Minus, Plus } from 'lucide-react';
+import { Check, Flame, Minus, Plus } from 'lucide-react';
 import { formatKg, parseReps, parseWeight, roundHalf, sanitizeRepsTyping, sanitizeWeightTyping } from '../../lib/format';
 import type { SetRowModel } from '../../lib/sessionRows';
 import type { RowValues } from '../../lib/sessionOps';
 import { cx } from '../../components/ui';
 
 export const SET_GRID = 'grid grid-cols-[36px_48px_minmax(0,1fr)_48px_56px_56px] items-center gap-1';
+
+const FIELD =
+  'h-14 w-full min-w-0 rounded-[18px] border border-transparent bg-[color-mix(in_srgb,var(--bg)_60%,var(--raised))] text-center font-extrabold tnum outline-none placeholder:text-[18px] placeholder:font-normal placeholder:text-muted focus:border-[var(--focus)]';
 
 /**
  * One set: number, weight (− / +), reps, check.
@@ -110,9 +113,9 @@ export const SetRow = memo(function SetRow({
     <div
       className={cx(
         SET_GRID,
-        'rounded-2xl px-0.5 py-1 transition-colors duration-200',
-        row.done && 'bg-[color-mix(in_srgb,var(--success)_12%,transparent)]',
-        row.isWarmup && !row.done && 'bg-[color-mix(in_srgb,var(--warning)_7%,transparent)]',
+        'rounded-[22px] px-0.5 py-1 transition-colors duration-200',
+        row.done ? 'bg-[linear-gradient(90deg,color-mix(in_srgb,var(--success)_20%,transparent),color-mix(in_srgb,var(--lower-2)_8%,transparent))]' : 'bg-[color-mix(in_srgb,var(--raised)_55%,transparent)]',
+        row.isWarmup && !row.done && 'bg-[color-mix(in_srgb,var(--warning)_9%,transparent)]',
       )}
     >
       <button
@@ -120,18 +123,19 @@ export const SetRow = memo(function SetRow({
         onClick={() => onMenu(row)}
         aria-label={`${setName[0].toUpperCase()}${setName.slice(1)}: opzioni (riscaldamento, elimina)`}
         className={cx(
-          'pressable relative flex h-12 items-center justify-center rounded-xl text-[17px] font-bold tnum before:absolute before:-inset-x-1.5 before:-inset-y-1',
-          row.isWarmup ? 'text-warning-ink' : row.done ? 'text-success-ink' : 'text-muted',
+          'pressable relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[16px] font-extrabold tnum before:absolute before:-inset-2',
+          row.isWarmup ? 'bg-[color-mix(in_srgb,var(--warning)_22%,transparent)] text-warning-ink' : row.done ? 'bg-[color-mix(in_srgb,var(--success)_28%,transparent)] text-success-ink' : 'bg-raised text-muted',
         )}
       >
-        {number}
+        {row.isWarmup ? <Flame size={17} aria-hidden /> : number}
+        {row.isWarmup && <span className="sr-only">R</span>}
       </button>
 
       <button
         type="button"
         onClick={() => bump(-1)}
         aria-label={`Togli ${formatKg(step)} kg, ${setName}`}
-        className="pressable flex h-12 items-center justify-center rounded-xl bg-raised text-ink"
+        className="pressable flex h-12 items-center justify-center rounded-2xl bg-raised text-ink"
       >
         <Minus size={20} aria-hidden />
       </button>
@@ -153,16 +157,13 @@ export const SetRow = memo(function SetRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') repsInput.current?.focus();
         }}
-        className={cx(
-          'h-14 w-full min-w-0 rounded-xl border border-transparent bg-raised text-center font-semibold tnum outline-none placeholder:text-[18px] placeholder:font-normal placeholder:text-muted focus:border-[var(--focus)]',
-          big,
-        )}
+        className={cx(FIELD, big)}
       />
       <button
         type="button"
         onClick={() => bump(1)}
         aria-label={`Aggiungi ${formatKg(step)} kg, ${setName}`}
-        className="pressable flex h-12 items-center justify-center rounded-xl bg-raised text-ink"
+        className="pressable flex h-12 items-center justify-center rounded-2xl bg-raised text-ink"
       >
         <Plus size={20} aria-hidden />
       </button>
@@ -187,10 +188,7 @@ export const SetRow = memo(function SetRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
         }}
-        className={cx(
-          'h-14 w-full min-w-0 rounded-xl border bg-raised text-center text-[28px] font-semibold tnum outline-none placeholder:text-[18px] placeholder:font-normal placeholder:text-muted focus:border-[var(--focus)]',
-          shake ? 'border-danger' : 'border-transparent',
-        )}
+        className={cx(FIELD, 'text-[28px]', shake && 'border-danger')}
         style={shake ? { animation: 'pop 300ms ease-out' } : undefined}
       />
 
@@ -200,15 +198,15 @@ export const SetRow = memo(function SetRow({
         aria-pressed={row.done}
         aria-label={row.done ? `${setName} fatta: tocca per riaprirla` : `Segna ${setName} come fatta`}
         className={cx(
-          'pressable relative flex h-14 w-14 items-center justify-center rounded-2xl border-2',
-          row.done ? 'border-transparent bg-success text-on-accent' : 'border-line bg-raised text-muted',
+          'pressable relative flex h-14 w-14 items-center justify-center rounded-[20px] border-2',
+          row.done ? 'border-transparent bg-[linear-gradient(135deg,var(--lower),var(--lower-2))] text-on-accent shadow-[0_10px_24px_-10px_var(--lower)]' : 'border-[color-mix(in_srgb,var(--text)_18%,transparent)] bg-transparent text-muted',
         )}
       >
         <span key={popKey} className={cx('flex', popKey > 0 && row.done && 'anim-pop rounded-full')}>
-          <Check size={28} strokeWidth={row.done ? 3.2 : 2.4} aria-hidden />
+          <Check size={28} strokeWidth={row.done ? 3.4 : 2.4} aria-hidden />
         </span>
         {isPr && (
-          <span className="absolute -top-2 -right-1 rounded-md bg-warning px-1 text-[10px] leading-4 font-extrabold text-[#1b1305]" aria-label="record personale">
+          <span className="absolute -top-2 -right-1 rounded-md bg-[linear-gradient(135deg,var(--warm),var(--warm-2))] px-1 text-[10px] leading-4 font-extrabold text-[#1b1305]" aria-label="record personale">
             PR
           </span>
         )}

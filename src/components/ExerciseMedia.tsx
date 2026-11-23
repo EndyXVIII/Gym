@@ -100,7 +100,7 @@ export function ExerciseMedia({ exercise, name, className }: { exercise: Exercis
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`${label}: apri a schermo intero`}
-        className={cx('group relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-line bg-raised', !showMap && media.kind === 'dataset' && 'dark-dim', className)}
+        className={cx('group relative block aspect-[16/10] w-full overflow-hidden rounded-[22px] border border-line bg-raised', !showMap && media.kind === 'dataset' && 'dark-dim', className)}
         style={bg && !showMap ? { backgroundColor: bg } : undefined}
       >
         {showMap && exercise && <MuscleMap primary={exercise.primary} secondary={exercise.secondary} className="p-2" />}

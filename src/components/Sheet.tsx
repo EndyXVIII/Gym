@@ -98,7 +98,7 @@ export function Sheet({
         aria-labelledby={labelledBy ?? (title ? id : undefined)}
         tabIndex={-1}
         className={cx(
-          'anim-sheet relative flex max-h-[min(88dvh,820px)] w-full max-w-[520px] min-w-0 flex-col rounded-t-[24px] border border-b-0 border-line bg-surface shadow-[var(--shadow)] outline-none',
+          'anim-sheet relative flex max-h-[min(88dvh,820px)] w-full max-w-[520px] min-w-0 flex-col rounded-t-[32px] border border-b-0 border-line bg-surface bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_10%,transparent),transparent_140px)] shadow-[var(--shadow)] outline-none',
           className,
         )}
       >
@@ -114,7 +114,7 @@ export function Sheet({
         </div>
         {title && (
           <div className="flex shrink-0 items-center justify-between gap-2 px-4 pb-2">
-            <h2 id={id} className="min-w-0 truncate text-[19px] font-bold text-ink">
+            <h2 id={id} className="min-w-0 truncate text-[20px] font-extrabold text-ink">
               {title}
             </h2>
             <IconButton label="Chiudi" onClick={onClose} size={48} className="-mr-2 text-muted">
